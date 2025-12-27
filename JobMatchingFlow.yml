@@ -1,0 +1,2108 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: JobMatchingFlow
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/openai:0.2.8@aae2be0913b8c6f0b80cff58e08d7a8b4c214569b41778413fcaea204561ff16
+    version: null
+kind: app
+version: 0.5.0
+workflow:
+  conversation_variables: []
+  environment_variables:
+  - description: ''
+    id: 7a02f1c4-8778-4efc-9401-de1854d3af02
+    name: PINECONE_INDEX_HOST
+    selector:
+    - env
+    - PINECONE_INDEX_HOST
+    value: https://yoin2-f2th4oj.svc.aped-4627-b74a.pinecone.io
+    value_type: string
+  - description: ''
+    id: cc9b1609-ace1-41a3-9271-ca92898f1f64
+    name: PINECONE_API_KEY
+    selector:
+    - env
+    - PINECONE_API_KEY
+    value: ''
+    value_type: string
+  - description: ''
+    id: e8cde235-d9d0-4745-b45d-f65ca5505b26
+    name: OPENAI_API_KEY
+    selector:
+    - env
+    - OPENAI_API_KEY
+    value: ''
+    value_type: string
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1762927644412-source-1762947353773-target
+      selected: false
+      source: '1762927644412'
+      sourceHandle: source
+      target: '1762947353773'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: iteration
+      id: 1762947353773-source-1762947424267-target
+      selected: false
+      source: '1762947353773'
+      sourceHandle: source
+      target: '1762947424267'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        sourceType: iteration-start
+        targetType: code
+      id: 1762947424267start-source-1762947519462-target
+      selected: false
+      source: 1762947424267start
+      sourceHandle: source
+      target: '1762947519462'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        sourceType: code
+        targetType: llm
+      id: 1762947519462-source-1762947601811-target
+      selected: false
+      source: '1762947519462'
+      sourceHandle: source
+      target: '1762947601811'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        sourceType: llm
+        targetType: code
+      id: 1762947601811-source-1762948321331-target
+      selected: false
+      source: '1762947601811'
+      sourceHandle: source
+      target: '1762948321331'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        sourceType: code
+        targetType: http-request
+      id: 1762948321331-source-1762948539522-target
+      selected: false
+      source: '1762948321331'
+      sourceHandle: source
+      target: '1762948539522'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: if-else
+      id: 1762927604277-source-1762949542499-target
+      selected: false
+      source: '1762927604277'
+      sourceHandle: source
+      target: '1762949542499'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1762949542499-875e8a03-95eb-4ab2-9890-0032dcf1186c-1762927644412-target
+      selected: false
+      source: '1762949542499'
+      sourceHandle: 875e8a03-95eb-4ab2-9890-0032dcf1186c
+      target: '1762927644412'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1762949542499-true-1762949802678-target
+      selected: false
+      source: '1762949542499'
+      sourceHandle: 'true'
+      target: '1762949802678'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1762949802678-source-1762949874559-target
+      selected: false
+      source: '1762949802678'
+      sourceHandle: source
+      target: '1762949874559'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: iteration
+      id: 1762949874559-source-1762949972809-target
+      selected: false
+      source: '1762949874559'
+      sourceHandle: source
+      target: '1762949972809'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        sourceType: iteration-start
+        targetType: code
+      id: 1762949972809start-source-1762950046537-target
+      selected: false
+      source: 1762949972809start
+      sourceHandle: source
+      target: '1762950046537'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        sourceType: code
+        targetType: llm
+      id: 1762950046537-source-1762950163358-target
+      selected: false
+      source: '1762950046537'
+      sourceHandle: source
+      target: '1762950163358'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        sourceType: llm
+        targetType: code
+      id: 1762950163358-source-1762950293391-target
+      selected: false
+      source: '1762950163358'
+      sourceHandle: source
+      target: '1762950293391'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        sourceType: code
+        targetType: http-request
+      id: 1762950293391-source-1762950682919-target
+      selected: false
+      source: '1762950293391'
+      sourceHandle: source
+      target: '1762950682919'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: code
+      id: 1763182580654-source-1763184378239-target
+      selected: false
+      source: '1763182580654'
+      sourceHandle: source
+      target: '1763184378239'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: llm
+      id: 1763184378239-source-1762952097909-target
+      selected: false
+      source: '1763184378239'
+      sourceHandle: source
+      target: '1762952097909'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: code
+      id: 1762952097909-source-1763185945645-target
+      selected: false
+      source: '1762952097909'
+      sourceHandle: source
+      target: '1763185945645'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 17647584798270-source-17647585111220-target
+      source: '17647584798270'
+      sourceHandle: source
+      target: '17647585111220'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1762949542499-31d8733f-656b-480e-954f-2a5bac070dd1-17647584798270-target
+      source: '1762949542499'
+      sourceHandle: 31d8733f-656b-480e-954f-2a5bac070dd1
+      target: '17647584798270'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: iteration
+      id: 17647585111220-source-1764765043040-target
+      source: '17647585111220'
+      sourceHandle: source
+      target: '1764765043040'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1764765043040'
+        sourceType: iteration-start
+        targetType: code
+      id: 1764765043040start-source-1764765067882-target
+      source: 1764765043040start
+      sourceHandle: source
+      target: '1764765067882'
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: code
+      id: 1762949542499-410cda52-9365-4b95-9950-520fb0a4a17f-1764765191211-target
+      source: '1762949542499'
+      sourceHandle: 410cda52-9365-4b95-9950-520fb0a4a17f
+      target: '1764765191211'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: if-else
+        targetType: code
+      id: 1762949542499-b646b74d-9f4b-4199-9542-ead6067361b6-1764840586633-target
+      source: '1762949542499'
+      sourceHandle: b646b74d-9f4b-4199-9542-ead6067361b6
+      target: '1764840586633'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: knowledge-retrieval
+      id: 1764765191211-source-1763182580654-target
+      source: '1764765191211'
+      sourceHandle: source
+      target: '1763182580654'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: code
+      id: 1764840586633-source-1764843063567-target
+      source: '1764840586633'
+      sourceHandle: source
+      target: '1764843063567'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: llm
+      id: 1764843063567-source-1764844053157-target
+      source: '1764843063567'
+      sourceHandle: source
+      target: '1764844053157'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: 1764844053157-source-1764843640231-target
+      source: '1764844053157'
+      sourceHandle: source
+      target: '1764843640231'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 開始
+        type: start
+        variables:
+        - default: format_anken
+          hint: ''
+          label: action
+          max_length: 48
+          options:
+          - format_yoin
+          - format_anken
+          - index_yoin
+          - index_anken
+          - matching_yoin
+          - matching_anken
+          - index_yoin_rapid
+          - index_yoin_pinecone
+          - test
+          placeholder: ''
+          required: true
+          type: select
+          variable: action
+        - default: ''
+          hint: ''
+          label: 検索クエリ
+          max_length: 300
+          options: []
+          placeholder: ''
+          required: false
+          type: paragraph
+          variable: query
+        - default: ''
+          hint: ''
+          label: start_date
+          max_length: 48
+          options: []
+          placeholder: ''
+          required: false
+          type: text-input
+          variable: start_date
+        - default: ''
+          hint: ''
+          label: end_date
+          max_length: 48
+          options: []
+          placeholder: ''
+          required: false
+          type: text-input
+          variable: end_date
+        - default: ''
+          hint: ''
+          label: limit
+          max_length: 48
+          options: []
+          placeholder: ''
+          required: false
+          type: text-input
+          variable: limit
+        - default: ''
+          hint: ''
+          label: offset
+          max_length: 48
+          options: []
+          placeholder: ''
+          required: false
+          type: text-input
+          variable: offset
+        - default: ''
+          hint: ''
+          label: 案件情報
+          max_length: 2000
+          options: []
+          placeholder: ''
+          required: false
+          type: paragraph
+          variable: anken
+      height: 265
+      id: '1762927604277'
+      position:
+        x: -236.264034980698
+        y: 133.7512336027978
+      positionAbsolute:
+        x: -236.264034980698
+        y: 133.7512336027978
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: 'スプレッドシート上の案件gmailデータをJSON化して取得してくる
+
+          スプレッドシート内のGASスクリプトを起動'
+        headers: ''
+        method: get
+        params: 'start_date:{{#1762927604277.start_date#}}
+
+          end_date:{{#1762927604277.end_date#}}
+
+          limit:{{#1762927604277.limit#}}
+
+          offset:{{#1762927604277.offset#}}'
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: JSON取得 （案件）
+        type: http-request
+        url: https://script.google.com/macros/s/AKfycbz2_SYNhkbrBjp1Zv7zB2tQKesGNNtjQGgFBLsl7DmLd3PohCFBG0ZT9ojNReBXa2Zv/exec?type=anken&limit=200
+        variables: []
+      height: 277
+      id: '1762927644412'
+      position:
+        x: 382
+        y: 282
+      positionAbsolute:
+        x: 382
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import json\n\ndef main(input_data: str):\n    \"\"\"\n    Dify Pythonノード（案件用）\n\
+          \    input_data: {\"type\":\"anken\",\"records\":[...]} 形式の文字列\n    出力:\
+          \ {\"llm_input\": [...]} 形式\n    \"\"\"\n\n    if not input_data:\n    \
+          \    return {\"llm_input\": []}\n\n    try:\n        data = json.loads(input_data)\n\
+          \    except Exception as e:\n        return {\"error\": f\"JSON parse failed:\
+          \ {e}\"}\n\n    # records配列を取り出す\n    records = data.get(\"records\", [])\n\
+          \    if not isinstance(records, list):\n        return {\"error\": \"Invalid\
+          \ format: records is not a list\"}\n\n    formatted = []\n    for row in\
+          \ records:\n        if \"本文\" in row:\n            formatted.append({\n\
+          \                \"id\": row.get(\"ID\"),\n                \"date\": row.get(\"\
+          受信日時\"),\n                \"subject\": row.get(\"件名\"),\n              \
+          \  \"text\": row.get(\"本文\"),\n                \"分類\": row.get(\"分類\", \"\
+          \")\n            })\n\n    return {\"llm_input\": formatted}"
+        code_language: python3
+        desc: 文字列化されたJSONを受け取り、整理されたdictとして返す
+        outputs:
+          llm_input:
+            children: null
+            type: array[object]
+        selected: false
+        title: データ整形（案件）
+        type: code
+        variables:
+        - value_selector:
+          - '1762927644412'
+          - body
+          value_type: string
+          variable: input_data
+      height: 96
+      id: '1762947353773'
+      position:
+        x: 693.883251093147
+        y: 282
+      positionAbsolute:
+        x: 693.883251093147
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        error_handle_mode: terminated
+        height: 290
+        is_parallel: false
+        iterator_input_type: array[object]
+        iterator_selector:
+        - '1762947353773'
+        - llm_input
+        output_selector:
+        - '1762947519462'
+        - prompt_input
+        output_type: array[string]
+        parallel_nums: 10
+        selected: false
+        start_node_id: 1762947424267start
+        title: イテレーション（案件）
+        type: iteration
+        width: 1292
+      height: 290
+      id: '1762947424267'
+      position:
+        x: 1003.1257751090868
+        y: 388.7891447758565
+      positionAbsolute:
+        x: 1003.1257751090868
+        y: 388.7891447758565
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 1292
+      zIndex: 1
+    - data:
+        desc: ''
+        isInIteration: true
+        selected: false
+        title: ''
+        type: iteration-start
+      draggable: false
+      height: 48
+      id: 1762947424267start
+      parentId: '1762947424267'
+      position:
+        x: 24
+        y: 68
+      positionAbsolute:
+        x: 1027.1257751090868
+        y: 456.7891447758565
+      selectable: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom-iteration-start
+      width: 44
+      zIndex: 1002
+    - data:
+        code: "def main(item):\n    \"\"\"\n    ForEach前に item 情報を展開済みテキストとして出力\n\
+          \    \"\"\"\n    if not item:\n        return {\"prompt_input\": \"\"}\n\
+          \n    # item中の値を整形\n    id_ = item.get(\"id\", \"\")\n    date_ = item.get(\"\
+          date\", \"\")\n    subject_ = item.get(\"subject\", \"\")\n    body_ = item.get(\"\
+          text\", \"\")\n\n    prompt_text = f\"\"\"\n以下は案件情報メールです。\nID: {id_}\n受信日時:\
+          \ {date_}\n件名: {subject_}\n本文:\n{body_}\n\"\"\"\n\n\n    return {\n    \
+          \    \"prompt_input\": prompt_text,\n        \"raw_input\": body_\n    \
+          \    }\n    "
+        code_language: python3
+        desc: 情報をトップレベルに上げるために展開
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        outputs:
+          prompt_input:
+            children: null
+            type: string
+          raw_input:
+            children: null
+            type: string
+        selected: false
+        title: itemを展開
+        type: code
+        variables:
+        - value_selector:
+          - '1762947424267'
+          - item
+          value_type: object
+          variable: item
+      height: 96
+      id: '1762947519462'
+      parentId: '1762947424267'
+      position:
+        x: 128
+        y: 68
+      positionAbsolute:
+        x: 1131.1257751090868
+        y: 456.7891447758565
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: １件ずつ構造化されたJSONを作成
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o-mini
+          provider: langgenius/openai/openai
+        prompt_template:
+        - id: bdc75fa0-93b9-4755-bb21-3feef49fc230
+          role: system
+          text: "あなたはITエンジニア派遣の「案件情報」を整理するアシスタントです。\n\n以下に入力として「メール本文」「メールID」「受信日時」「件名」「本文」が与えられます。\
+            \  \nこれらの情報をもとに、案件情報を正確に抽出してください。\n\n入力情報:\n{{#1762947519462.prompt_input#}}\n\
+            \n必ず次のJSON形式で出力してください：\n\n{\n  \"id\": \"（ここに上記のidをそのまま記入）\",\n  \"受信日時\"\
+            : \"（ここに上記の受信日時をそのまま記入）\",\n  \"案件名\": \"\",\n  \"必須スキル\": \"\",\n  \"\
+            作業場所\": \"\",\n  \"勤務形態\": \"\",\n  \"期間\": \"\",\n  \"単価\": \"\",\n \
+            \ \"備考\": \"\",\n  \"件名\": \"\"\n}\n\n注意:\n-  \"必須スキル\"は箇条書きに変換し、各行の頭に\"\
+            - \"を付加してください\n- \"期間\"は「期間」「時期」「開始」「作業開始時期」「作業期間」「スケジュール」などで示されている\n\
+            - 出力は必ず上記のJSONのみで返してください。\n- コードブロックや説明文は不要です。\n- idと受信日時は絶対に入力値（{{ item.id\
+            \ }} / {{ item.date }}）と一致させてください。"
+        - id: cff3e1b6-a019-4d2d-adba-578b9c00fe9d
+          role: user
+          text: ''
+        selected: false
+        title: LLM（案件）
+        type: llm
+        vision:
+          enabled: false
+      height: 116
+      id: '1762947601811'
+      parentId: '1762947424267'
+      position:
+        x: 430
+        y: 68
+      positionAbsolute:
+        x: 1433.1257751090868
+        y: 456.7891447758565
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        code: "import json\nimport re\n\ndef main(text: str, raw_input: str):\n  \
+          \  \"\"\"\n    案件構造化（単一出力版）\n    - 複数JSONが含まれている場合も最初の1件のみ抽出\n    - 出力はトップレベル（flat）形式\n\
+          \    \"\"\"\n\n    # デフォルト出力（空時用）\n    default_output = {\n        \"id\"\
+          : \"\",\n        \"date\": \"\",\n        \"name\": \"\",\n        \"skill\"\
+          : \"\",\n        \"station\": \"\",\n        \"work_style\": \"\",\n   \
+          \     \"schedule\": \"\",\n        \"price\": \"\",\n        \"etc\": \"\
+          \",\n        \"error\": \"\",\n        \"subject\": \"\",\n        \"raw_input\"\
+          : \"\"\n    }\n\n    if not text:\n        default_output[\"error\"] = \"\
+          empty input\"\n        return default_output\n\n    # 制御文字や全角スペース除去\n  \
+          \  clean_text = (\n        str(text)\n        .replace(\"\\ufeff\", \"\"\
+          )\n        .replace(\"\\xa0\", \" \")\n        .strip()\n    )\n\n    #\
+          \ { ... } の最初のブロックのみ抽出\n    match = re.search(r'\\{[\\s\\S]*?\\}', clean_text)\n\
+          \    if not match:\n        default_output[\"error\"] = \"No JSON block\
+          \ found\"\n        default_output[\"raw_input\"] = clean_text[:1000]\n \
+          \       return default_output\n\n    block = match.group(0)\n\n    try:\n\
+          \        data = json.loads(block)\n\n        return {\n            \"id\"\
+          : data.get(\"id\", \"\"),\n            \"date\": data.get(\"受信日時\", \"\"\
+          ),\n            \"name\": data.get(\"案件名\", \"\"),\n            \"skill\"\
+          : data.get(\"必須スキル\", \"\"),\n            \"station\": data.get(\"作業場所\"\
+          , \"\"),\n            \"work_style\": data.get(\"勤務形態\", \"\"),\n      \
+          \      \"schedule\": data.get(\"期間\", \"\"),\n            \"price\": data.get(\"\
+          単価\", \"\"),\n            \"etc\": data.get(\"備考\", \"\"),\n           \
+          \ \"subject\": data.get(\"件名\", \"\"),\n            \"raw_input\": raw_input,\n\
+          \            \"error\": \"\"\n        }\n\n    except Exception as e:\n\
+          \        default_output[\"error\"] = f\"JSON parse failed: {e}\"\n     \
+          \   default_output[\"raw_input\"] = block[:1000]\n        return default_output\n\
+          \        "
+        code_language: python3
+        desc: LLMによって生成されたJSONテキストをdictに変換
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        outputs:
+          date:
+            children: null
+            type: string
+          error:
+            children: null
+            type: string
+          etc:
+            children: null
+            type: string
+          id:
+            children: null
+            type: string
+          name:
+            children: null
+            type: string
+          price:
+            children: null
+            type: string
+          raw_input:
+            children: null
+            type: string
+          schedule:
+            children: null
+            type: string
+          skill:
+            children: null
+            type: string
+          station:
+            children: null
+            type: string
+          subject:
+            children: null
+            type: string
+          work_style:
+            children: null
+            type: string
+        selected: false
+        title: データ整形2（案件）
+        type: code
+        variables:
+        - value_selector:
+          - '1762947601811'
+          - text
+          value_type: string
+          variable: text
+        - value_selector:
+          - '1762947519462'
+          - raw_input
+          value_type: string
+          variable: raw_input
+      height: 96
+      id: '1762948321331'
+      parentId: '1762947424267'
+      position:
+        x: 732
+        y: 68
+      positionAbsolute:
+        x: 1735.1257751090868
+        y: 456.7891447758565
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-289
+            key: ''
+            type: text
+            value: "{\n  \"type\": \"anken\", \n  \"record\": {\n            \"id\"\
+              :\"{{#1762948321331.id#}}\",\n            \"date\": \"{{#1762948321331.date#}}\"\
+              ,\n            \"name\": \"{{#1762948321331.name#}}\",\n           \
+              \ \"skill\": \"{{#1762948321331.skill#}}\",\n            \"station\"\
+              : \"{{#1762948321331.station#}}\",\n            \"work_style\": \"{{#1762948321331.work_style#}}\"\
+              ,\n            \"schedule\":\"{{#1762948321331.schedule#}}\",\n    \
+              \        \"price\": \"{{#1762948321331.price#}}\",\n            \"etc\"\
+              : \"{{#1762948321331.etc#}}\",\n            \"subject\": \"{{#1762948321331.subject#}}\"\
+              ,\n            \"raw_input\": \"{{#1762948321331.raw_input#}}\"\n  \
+              \  }\n}"
+          type: json
+        headers: ''
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762947424267'
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: シート書き戻し（案件）
+        type: http-request
+        url: https://script.google.com/macros/s/AKfycbz2_SYNhkbrBjp1Zv7zB2tQKesGNNtjQGgFBLsl7DmLd3PohCFBG0ZT9ojNReBXa2Zv/exec?type=anken
+        variables: []
+      height: 201
+      id: '1762948539522'
+      parentId: '1762947424267'
+      position:
+        x: 1034
+        y: 68
+      positionAbsolute:
+        x: 2037.1257751090868
+        y: 456.7891447758565
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: is
+            id: ca5128de-6bab-4e0e-b11d-f591968ffd8c
+            value: format_yoin
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          id: 'true'
+          logical_operator: and
+        - case_id: 875e8a03-95eb-4ab2-9890-0032dcf1186c
+          conditions:
+          - comparison_operator: is
+            id: d68e0b11-ed15-41f7-abc9-7b83541d04cf
+            value: format_anken
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          id: 875e8a03-95eb-4ab2-9890-0032dcf1186c
+          logical_operator: and
+        - case_id: 41853380-7f96-48e4-8663-f23e7aef1a15
+          conditions:
+          - comparison_operator: is
+            id: a8036f3e-54cc-4ed8-ac63-e4af660833c1
+            value: index_yoin
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          id: 41853380-7f96-48e4-8663-f23e7aef1a15
+          logical_operator: and
+        - case_id: 43289d4b-d4c4-4966-8b3e-bd269f895602
+          conditions:
+          - comparison_operator: is
+            id: c22cc462-ef48-4cd3-80ff-27c66d1cf04d
+            value: index_anken
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          id: 43289d4b-d4c4-4966-8b3e-bd269f895602
+          logical_operator: and
+        - case_id: b646b74d-9f4b-4199-9542-ead6067361b6
+          conditions:
+          - comparison_operator: is
+            id: 7ccbb6ee-b2c9-40c0-8197-5168bb407bd2
+            value: matching_yoin
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          id: b646b74d-9f4b-4199-9542-ead6067361b6
+          logical_operator: and
+        - case_id: 6a42eb40-7186-46ad-8098-4ddcf4306ba8
+          conditions:
+          - comparison_operator: is
+            id: cf0e956f-f39b-47eb-9d6e-01b902aa2fb9
+            value: index_yoin_rapid
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          id: 6a42eb40-7186-46ad-8098-4ddcf4306ba8
+          logical_operator: and
+        - case_id: 31d8733f-656b-480e-954f-2a5bac070dd1
+          conditions:
+          - comparison_operator: is
+            id: 2e4fd382-a2f4-4a63-9170-bd82560eaf91
+            value: index_yoin_pinecone
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          id: 31d8733f-656b-480e-954f-2a5bac070dd1
+          logical_operator: and
+        - case_id: 410cda52-9365-4b95-9950-520fb0a4a17f
+          conditions:
+          - comparison_operator: is
+            id: 72ba2333-c5ee-4d43-87b1-1842c37c8377
+            value: test
+            varType: string
+            variable_selector:
+            - '1762927604277'
+            - action
+          logical_operator: and
+        selected: false
+        title: IF/ELSE
+        type: if-else
+      height: 460
+      id: '1762949542499'
+      position:
+        x: 67.38317353482637
+        y: 100.36790495133062
+      positionAbsolute:
+        x: 67.38317353482637
+        y: 100.36790495133062
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: 'スプレッドシート上の要員gmailデータをJSON化して取得してくる
+
+          スプレッドシート内のGASスクリプトを起動'
+        headers: ''
+        method: get
+        params: 'start_date:{{#1762927604277.start_date#}}
+
+          end_date:{{#1762927604277.end_date#}}
+
+          limit:{{#1762927604277.limit#}}
+
+          offset:{{#1762927604277.offset#}}'
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: JSON取得（要員）
+        type: http-request
+        url: https://script.google.com/macros/s/AKfycbz2_SYNhkbrBjp1Zv7zB2tQKesGNNtjQGgFBLsl7DmLd3PohCFBG0ZT9ojNReBXa2Zv/exec?type=yoin
+        variables: []
+      height: 261
+      id: '1762949802678'
+      position:
+        x: 382
+        y: -19.91813818861729
+      positionAbsolute:
+        x: 382
+        y: -19.91813818861729
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import json\n\ndef main(input_data: str):\n    \"\"\"\n    Dify Pythonノード（案件用）\n\
+          \    input_data: {\"type\":\"anken\",\"records\":[...]} 形式の文字列\n    出力:\
+          \ {\"llm_input\": [...]} 形式\n    \"\"\"\n\n    if not input_data:\n    \
+          \    return {\"llm_input\": []}\n\n    try:\n        data = json.loads(input_data)\n\
+          \    except Exception as e:\n        return {\"error\": f\"JSON parse failed:\
+          \ {e}\"}\n\n    # records配列を取り出す\n    records = data.get(\"records\", [])\n\
+          \    if not isinstance(records, list):\n        return {\"error\": \"Invalid\
+          \ format: records is not a list\"}\n\n    formatted = []\n    for row in\
+          \ records:\n        if \"本文\" in row:\n            formatted.append({\n\
+          \                \"id\": row.get(\"ID\"),\n                \"date\": row.get(\"\
+          受信日時\"),\n                \"subject\": row.get(\"件名\"),\n              \
+          \  \"text\": row.get(\"本文\"),\n                \"分類\": row.get(\"分類\", \"\
+          \")\n            })\n\n    return {\"llm_input\": formatted}"
+        code_language: python3
+        desc: 文字列化されたJSONを受け取り、整理されたdictとして返す
+        outputs:
+          llm_input:
+            children: null
+            type: array[object]
+        selected: false
+        title: データ整形（要員）
+        type: code
+        variables:
+        - value_selector:
+          - '1762949802678'
+          - body
+          value_type: string
+          variable: input_data
+      height: 96
+      id: '1762949874559'
+      position:
+        x: 688.9691055345215
+        y: -19.91813818861729
+      positionAbsolute:
+        x: 688.9691055345215
+        y: -19.91813818861729
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        error_handle_mode: continue-on-error
+        height: 365
+        is_parallel: false
+        iterator_input_type: array[object]
+        iterator_selector:
+        - '1762949874559'
+        - llm_input
+        output_selector:
+        - '1762950046537'
+        - prompt_input
+        output_type: array[string]
+        parallel_nums: 10
+        selected: false
+        start_node_id: 1762949972809start
+        title: イテレーション（要員）
+        type: iteration
+        width: 1561
+      height: 365
+      id: '1762949972809'
+      position:
+        x: 1003.1257751090868
+        y: -19.91813818861729
+      positionAbsolute:
+        x: 1003.1257751090868
+        y: -19.91813818861729
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 1561
+      zIndex: 1
+    - data:
+        desc: ''
+        isInIteration: true
+        selected: false
+        title: ''
+        type: iteration-start
+      draggable: false
+      height: 48
+      id: 1762949972809start
+      parentId: '1762949972809'
+      position:
+        x: 24
+        y: 68
+      positionAbsolute:
+        x: 1027.1257751090868
+        y: 48.08186181138271
+      selectable: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom-iteration-start
+      width: 44
+      zIndex: 1002
+    - data:
+        code: "def main(item):\n    \"\"\"\n    ForEach前に item 情報を展開済みテキストとして出力\n\
+          \    \"\"\"\n    if not item:\n        return {\"prompt_input\": \"\"}\n\
+          \n    # item中の値を整形\n    id_ = item.get(\"id\", \"\")\n    date_ = item.get(\"\
+          date\", \"\")\n    subject_ = item.get(\"subject\", \"\")\n    body_ = item.get(\"\
+          text\", \"\")\n\n    prompt_text = f\"\"\"\n以下は案件情報メールです。\nID: {id_}\n受信日時:\
+          \ {date_}\n件名: {subject_}\n本文:\n{body_}\n\"\"\"\n\n\n    return {\n    \
+          \    \"prompt_input\": prompt_text,\n        \"raw_input\": body_\n    \
+          \    }"
+        code_language: python3
+        desc: 情報をトップレベルに上げるために展開
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        outputs:
+          prompt_input:
+            children: null
+            type: string
+          raw_input:
+            children: null
+            type: string
+        selected: false
+        title: itemを展開
+        type: code
+        variables:
+        - value_selector:
+          - '1762949972809'
+          - item
+          value_type: object
+          variable: item
+      height: 96
+      id: '1762950046537'
+      parentId: '1762949972809'
+      position:
+        x: 128
+        y: 68
+      positionAbsolute:
+        x: 1131.1257751090868
+        y: 48.08186181138271
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: １件ずつ構造化されたJSONを作成
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o-mini
+          provider: langgenius/openai/openai
+        prompt_template:
+        - id: 039c8967-4310-4816-a972-b0451688748f
+          role: system
+          text: "あなたはITエンジニア派遣の「要員情報」を整理するアシスタントです。\n\n以下に入力として「メール本文」「メールID」「受信日時」「件名」「本文」が与えられます。\
+            \  \nこれらの情報をもとに、要員情報を正確に抽出してください。\n\n入力情報:\n{{#1762950046537.prompt_input#}}\n\
+            \n必ず次のJSON形式で出力してください：\n\n{\n  \"id\": \"（ここに上記のidをそのまま記入）\",\n  \"受信日時\"\
+            : \"（ここに上記の受信日時をそのまま記入）\",\n  \"氏名\": \"\",\n  \"年齢\":\"\",\n  \"スキル\"\
+            : \"\",\n  \"最寄駅\": \"\",\n  \"勤務形態\": \"\",\n  \"単価\": \"\",\n  \"備考\"\
+            : \"\",\n  \"件名\": \"\"\n}\n\n- 出力は必ず上記のJSONのみで返してください。\n- コードブロックや説明文は不要です。\n\
+            - 年齢は「歳」「才」などは含めないでください\n- idと受信日時は絶対に入力値（{{ item.id }} / {{ item.date\
+            \ }}）と一致させてください。"
+        - id: b5fb1c61-3618-4e3f-b05a-34e07358247b
+          role: user
+          text: ''
+        selected: false
+        title: LLM 2
+        type: llm
+        vision:
+          enabled: false
+      height: 116
+      id: '1762950163358'
+      parentId: '1762949972809'
+      position:
+        x: 430
+        y: 68
+      positionAbsolute:
+        x: 1433.1257751090868
+        y: 48.08186181138271
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        code: "import json\nimport re\n\ndef main(text: str, raw_input: str):\n  \
+          \  \"\"\"\n    案件構造化（単一出力版）\n    - 複数JSONが含まれている場合も最初の1件のみ抽出\n    - 出力はトップレベル（flat）形式\n\
+          \    \"\"\"\n\n    # デフォルト出力（空時用）\n    default_output = {\n        \"id\"\
+          : \"\",\n        \"date\": \"\",\n        \"name\": \"\",\n        \"age\"\
+          : \"\",\n        \"skill\": \"\",\n        \"station\": \"\",\n        \"\
+          work_style\": \"\",\n        \"price\": \"\",\n        \"etc\": \"\",\n\
+          \        \"error\": \"\",\n        \"subject\": \"\",\n        \"raw_input\"\
+          : \"\"\n    }\n\n    if not text:\n        default_output[\"error\"] = \"\
+          empty input\"\n        return default_output\n\n    # 制御文字や全角スペース除去\n  \
+          \  clean_text = (\n        str(text)\n        .replace(\"\\ufeff\", \"\"\
+          )\n        .replace(\"\\xa0\", \" \")\n        .strip()\n    )\n\n    #\
+          \ { ... } の最初のブロックのみ抽出\n    match = re.search(r'\\{[\\s\\S]*?\\}', clean_text)\n\
+          \    if not match:\n        default_output[\"error\"] = \"No JSON block\
+          \ found\"\n        default_output[\"raw_input\"] = clean_text[:1000]\n \
+          \       return default_output\n\n    block = match.group(0)\n\n    try:\n\
+          \        data = json.loads(block)\n\n        return {\n            \"id\"\
+          : data.get(\"id\", \"\"),\n            \"date\": data.get(\"受信日時\", \"\"\
+          ),\n            \"name\": data.get(\"氏名\", \"\"),\n            \"age\":\
+          \ data.get(\"年齢\", \"\"),\n            \"skill\": data.get(\"スキル\", \"\"\
+          ),\n            \"station\": data.get(\"最寄駅\", \"\"),\n            \"work_style\"\
+          : data.get(\"勤務形態\", \"\"),\n            \"price\": data.get(\"単価\", \"\"\
+          ),\n            \"etc\": data.get(\"備考\", \"\"),\n            \"subject\"\
+          : data.get(\"件名\", \"\"),\n            \"raw_input\": raw_input,\n     \
+          \       \"error\": \"\",\n        }\n\n    except Exception as e:\n    \
+          \    default_output[\"error\"] = f\"JSON parse failed: {e}\"\n        default_output[\"\
+          raw_input\"] = block[:1000]\n        return default_output\n        "
+        code_language: python3
+        desc: LLMによって生成されたJSONテキストをdictに変換
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        outputs:
+          age:
+            children: null
+            type: string
+          date:
+            children: null
+            type: string
+          error:
+            children: null
+            type: string
+          etc:
+            children: null
+            type: string
+          id:
+            children: null
+            type: string
+          name:
+            children: null
+            type: string
+          price:
+            children: null
+            type: string
+          raw_input:
+            children: null
+            type: string
+          skill:
+            children: null
+            type: string
+          station:
+            children: null
+            type: string
+          subject:
+            children: null
+            type: string
+          work_style:
+            children: null
+            type: string
+        selected: false
+        title: データ整形2（要員）
+        type: code
+        variables:
+        - value_selector:
+          - '1762950163358'
+          - text
+          value_type: string
+          variable: text
+        - value_selector:
+          - '1762950046537'
+          - raw_input
+          value_type: string
+          variable: raw_input
+      height: 96
+      id: '1762950293391'
+      parentId: '1762949972809'
+      position:
+        x: 732
+        y: 68
+      positionAbsolute:
+        x: 1735.1257751090868
+        y: 48.08186181138271
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-452
+            key: ''
+            type: text
+            value: "{\n  \"type\": \"yoin\", \n  \"record\": {\n            \"id\"\
+              :\"{{#1762950293391.id#}}\",\n            \"date\": \"{{#1762950293391.date#}}\"\
+              ,\n            \"name\": \"{{#1762950293391.name#}}\",\n           \
+              \ \"age\":\"{{#1762950293391.age#}}\",\n            \"skill\": \"{{#1762950293391.skill#}}\"\
+              ,\n            \"station\": \"{{#1762950293391.station#}}\",\n     \
+              \       \"work_style\": \"{{#1762950293391.work_style#}}\",\n      \
+              \      \"price\": \"{{#1762950293391.price#}}\",\n            \"etc\"\
+              : \"{{#1762950293391.etc#}}\",\n            \"subject\": \"{{#1762950293391.subject#}}\"\
+              ,\n            \"raw_input\": \"{{#1762950293391.raw_input#}}\"\n  \
+              \  }\n}"
+          type: json
+        headers: ''
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1762949972809'
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: HTTP リクエスト 4
+        type: http-request
+        url: https://script.google.com/macros/s/AKfycbz2_SYNhkbrBjp1Zv7zB2tQKesGNNtjQGgFBLsl7DmLd3PohCFBG0ZT9ojNReBXa2Zv/exec
+        variables: []
+      height: 185
+      id: '1762950682919'
+      parentId: '1762949972809'
+      position:
+        x: 1034
+        y: 68
+      positionAbsolute:
+        x: 2037.1257751090868
+        y: 48.08186181138271
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gpt-4o-mini
+          provider: langgenius/openai/openai
+        prompt_template:
+        - id: 983f7dd1-86d3-4dd6-a13b-111a80490d9c
+          role: system
+          text: "あなたはSESマッチング担当者です。\n案件情報と要員情報を比較し、マッチ度を0〜100で評価してください。\n要員情報はナレッジから取得してください\n\
+            {{#1763184378239.merged_text#}}\n特に「勤務形態（常駐／リモート／ハイブリッド）」を厳密に考慮してください。\n\
+            \n勤務形態の評価基準：\n- 案件が「常駐」の場合、要員が「常駐可能」でない限りスコアを下げてください。\n- 案件が「リモート併用」なら、要員が「常駐」「併用」どちらでも可とします。\n\
+            - 案件が「フルリモート」の場合、要員が「常駐希望」でも可とします（柔軟性あり）。\n- 「フルリモート希望」要員に「常駐案件」は基本的に不一致（スコア0.2以下）。\n\
+            \n評価項目：\n1. 必須スキルの一致（最重要）\n2. 勤務形態の整合性（重要）\n3. 単価の適合（±20％）\n4. 年齢・稼働時期・備考の相性（補助）\n\
+            案件情報:\n{{#1762927604277.query#}}\n\n出力形式:\n\n{\n  \"matches\":[\n    {\n\
+            \      \"id\": \"\",\n      \"氏名\": \"\",\n      \"年齢\": \"\",\n     \
+            \ \"最寄駅\": \"\",\n      \"スキル\": \"\",\n      \"勤務形態（希望）:\"\",\n     \
+            \ \"マッチスコア\": 50,\n      \"一致項目\": []\n    }\n}\n\n注意:\n- JSONのみを出力してください。\n\
+            - ただしコードブロックは不要です\n- 複数のマッチがあった場合、スコアの高い順に最大5名分出力してください\n"
+        selected: false
+        structured_output_enabled: false
+        title: マッチングLLM
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1762952097909'
+      position:
+        x: 898.4499115946247
+        y: 1376.2787970038837
+      positionAbsolute:
+        x: 898.4499115946247
+        y: 1376.2787970038837
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        author: ykohno
+        desc: ''
+        height: 88
+        selected: false
+        showAuthor: true
+        text: '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"font-size:
+          16px;","text":"構造化フロー","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textStyle":"font-size:
+          16px;","textFormat":0}],"direction":null,"format":"","indent":0,"type":"root","version":1,"textStyle":"font-size:
+          16px;"}}'
+        theme: blue
+        title: ''
+        type: ''
+        width: 240
+      height: 88
+      id: '1763120735064'
+      position:
+        x: 382
+        y: -140.16886175911677
+      positionAbsolute:
+        x: 382
+        y: -140.16886175911677
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom-note
+      width: 240
+    - data:
+        dataset_ids:
+        - ake1wgV0geAg5R35H6XAoa0BNDPmk6bZP7Mxb+TqQnosbdQAYwKl0vV5NR/Ydj+/
+        multiple_retrieval_config:
+          reranking_enable: false
+          reranking_mode: weighted_score
+          top_k: 4
+          weights:
+            keyword_setting:
+              keyword_weight: 0
+            vector_setting:
+              embedding_model_name: text-embedding-3-small
+              embedding_provider_name: langgenius/openai/openai
+              vector_weight: 1
+            weight_type: customized
+        query_variable_selector:
+        - '1762927604277'
+        - query
+        retrieval_mode: multiple
+        selected: false
+        title: 知識検索
+        type: knowledge-retrieval
+      height: 90
+      id: '1763182580654'
+      position:
+        x: 344.98818028190306
+        y: 1376.2787970038837
+      positionAbsolute:
+        x: 344.98818028190306
+        y: 1376.2787970038837
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "def main(input: list[dict]):\n    # input[\"result\"] がリストになっている\n\
+          \    items = []\n    for i in input:\n        title = i.get(\"title\", \"\
+          \")\n        content = i.get(\"content\", \"\")\n        items.append(f\"\
+          【{title}】\\n{content}\")\n\n    output_text = \"\\n\\n\".join(items)\n\n\
+          \    return {\n        \"merged_text\": output_text\n    }\n"
+        code_language: python3
+        outputs:
+          merged_text:
+            children: null
+            type: string
+        selected: false
+        title: 配列を展開
+        type: code
+        variables:
+        - value_selector:
+          - '1763182580654'
+          - result
+          value_type: array[object]
+          variable: input
+      height: 52
+      id: '1763184378239'
+      position:
+        x: 623.1094413512037
+        y: 1376.2787970038837
+      positionAbsolute:
+        x: 623.1094413512037
+        y: 1376.2787970038837
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "\ndef main(text: str):\n    return {\n        \"result\": text,\n \
+          \   }\n"
+        code_language: python3
+        outputs:
+          text:
+            children: null
+            type: string
+        selected: false
+        title: コード実行 14
+        type: code
+        variables:
+        - value_selector:
+          - '1762952097909'
+          - text
+          value_type: string
+          variable: text
+      height: 52
+      id: '1763185945645'
+      position:
+        x: 1168.4140465145736
+        y: 1376.2787970038837
+      positionAbsolute:
+        x: 1168.4140465145736
+        y: 1376.2787970038837
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        author: Dify
+        desc: ''
+        height: 88
+        selected: false
+        showAuthor: true
+        text: '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"font-size:
+          16px;","text":"RAGフロー（高速）","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textStyle":"font-size:
+          16px;","textFormat":0}],"direction":null,"format":"","indent":0,"type":"root","version":1,"textStyle":"font-size:
+          16px;"}}'
+        theme: blue
+        title: ''
+        type: ''
+        width: 240
+      height: 88
+      id: '1763812290957'
+      position:
+        x: 390.75197600302073
+        y: 612.9052233787402
+      positionAbsolute:
+        x: 390.75197600302073
+        y: 612.9052233787402
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom-note
+      width: 240
+    - data:
+        author: Dify
+        desc: ''
+        height: 123
+        selected: false
+        showAuthor: true
+        text: '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"クラウド版のpayloadに引っかかり数件くらいしか登録できないので、ファイルにして手動登録する。数百件でもおそらく可","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}'
+        theme: blue
+        title: ''
+        type: ''
+        width: 250
+      height: 123
+      id: '1764246622764'
+      position:
+        x: 801.4729443468265
+        y: 589.6547469495915
+      positionAbsolute:
+        x: 801.4729443468265
+        y: 589.6547469495915
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom-note
+      width: 250
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: 'スプレッドシート上の要員構造化データをJSON化して取得してくる
+
+          スプレッドシート内のGASスクリプトを起動'
+        headers: ''
+        method: get
+        params: 'start_date:{{#1762927604277.start_date#}}
+
+          end_date:{{#1762927604277.end_date#}}
+
+          limit:{{#1762927604277.limit#}}
+
+          offset:{{#1762927604277.offset#}}'
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: JSON取得（要員高速インデックスPinecone）
+        type: http-request
+        url: https://script.google.com/macros/s/AKfycbz2_SYNhkbrBjp1Zv7zB2tQKesGNNtjQGgFBLsl7DmLd3PohCFBG0ZT9ojNReBXa2Zv/exec?type=yoin_format
+        variables: []
+      height: 278
+      id: '17647584798270'
+      position:
+        x: 837.3247632475116
+        y: 839.1342195318049
+      positionAbsolute:
+        x: 837.3247632475116
+        y: 839.1342195318049
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import json\n\ndef main(input_data: str):\n    \"\"\"\n    Dify Pythonノード（案件用）\n\
+          \    input_data: {\"type\":\"anken\",\"records\":[...]} 形式の文字列\n    出力:\
+          \ rag_text first_id\n    \"\"\"\n\n    rag_text = \"\"\n    records_formatted\
+          \ = []\n\n    if not input_data:\n        return {\"records_formatted\"\
+          : []}\n\n    try:\n        data = json.loads(input_data)\n    except Exception\
+          \ as e:\n        return {\"error\": f\"JSON parse failed: {e}\"}\n\n   \
+          \ # records配列を取り出す\n    records = data.get(\"records\", [])\n    if not\
+          \ isinstance(records, list):\n        return {\"error\": \"Invalid format:\
+          \ records is not a list\"}\n\n    for index, row in enumerate(records):\n\
+          \              \n            # yoin_dict = {\n            #     \"要員ID\"\
+          : row.get(\"ID\"),\n            #     \"受信日時\": row.get(\"受信日時\"),\n   \
+          \         #     \"氏名\": row.get(\"氏名\"),\n            #     \"年齢\": row.get(\"\
+          年齢\"),\n            #     \"スキル\": row.get(\"スキル\"),\n            #    \
+          \ \"最寄駅\": row.get(\"最寄駅\"),\n            #     \"勤務形態（希望）\": row.get(\"\
+          勤務形態（希望）\"),\n            #     \"単価（希望）\": row.get(\"単価（希望）\"),\n     \
+          \       #     \"備考\": row.get(\"備考\"),\n            #     \"メールタイトル\": row.get(\"\
+          メールタイトル\"),\n            #     \"メール本文\": row.get(\"メール本文\"),\n        \
+          \    # }\n\n        yoin_text = f\"\"\"\n        【要員ID】 {row.get(\"ID\"\
+          )}\n        【受信日時】 {row.get(\"受信日時\")}\n        【氏名】 {row.get(\"氏名\")}\n\
+          \        【年齢】 {row.get(\"年齢\")}\n        【スキル】 {row.get(\"スキル\")}\n    \
+          \    【最寄駅】 {row.get(\"最寄駅\")}\n        【勤務形態（希望）】 {row.get(\"勤務形態（希望）\"\
+          )}\n        【単価（希望）】 {row.get(\"単価（希望）\")}\n        【備考】 {row.get(\"備考\"\
+          )}\n        【メールタイトル】 {row.get(\"メールタイトル\")}\n        \"\"\"\n\n       \
+          \ record = {\n            \"id\": row.get(\"ID\"),\n            \"recieved_at\"\
+          : row.get(\"受信日時\"),\n            \"rag_text\": yoin_text\n        }\n\n\
+          \        records_formatted.append(record)\n\n    return {\n        \"records_formatted\"\
+          \ : records_formatted\n        }"
+        code_language: python3
+        desc: 文字列化されたJSONを受け取り、RAGに投入するテキストを出力
+        outputs:
+          records_formatted:
+            children: null
+            type: array[object]
+        selected: false
+        title: データ整形（要員インデックス） (2)
+        type: code
+        variables:
+        - value_selector:
+          - '17647584798270'
+          - body
+          value_type: string
+          variable: input_data
+      height: 96
+      id: '17647585111220'
+      position:
+        x: 1213.266818866631
+        y: 839.1342195318049
+      positionAbsolute:
+        x: 1213.266818866631
+        y: 839.1342195318049
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        error_handle_mode: continue-on-error
+        flatten_output: true
+        height: 180
+        is_parallel: false
+        iterator_input_type: array[object]
+        iterator_selector:
+        - '17647585111220'
+        - records_formatted
+        output_selector:
+        - '1764765877751'
+        - status_code
+        output_type: array[number]
+        parallel_nums: 10
+        selected: false
+        start_node_id: 1764765043040start
+        title: イテレーション 3
+        type: iteration
+        width: 414
+      height: 180
+      id: '1764765043040'
+      position:
+        x: 1596.2545189572686
+        y: 839.1342195318049
+      positionAbsolute:
+        x: 1596.2545189572686
+        y: 839.1342195318049
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 414
+      zIndex: 1
+    - data:
+        desc: ''
+        isInIteration: true
+        selected: false
+        title: ''
+        type: iteration-start
+      draggable: false
+      height: 48
+      id: 1764765043040start
+      parentId: '1764765043040'
+      position:
+        x: 24
+        y: 68
+      positionAbsolute:
+        x: 1620.2545189572686
+        y: 907.1342195318049
+      selectable: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom-iteration-start
+      width: 44
+      zIndex: 1002
+    - data:
+        code: "import requests\nimport json\n\ndef main(input: dict, OPENAI_KEY: str,\
+          \ PINECONE_API_KEY: str, PINECONE_INDEX_HOST: str):\n    \"\"\"\n    入力:\n\
+          \      id: ベクトルID\n      rag_text: テキスト（要員情報）\n      OPENAI_API_KEY: OpenAI\
+          \ APIキー\n      PINECONE_API_KEY: Pinecone APIキー\n      PINECONE_INDEX_HOST:\
+          \ 例 https://yoin-xxxxxxx.svc.xxx.pinecone.io\n    \"\"\"\n    id = input[\"\
+          id\"]\n    r_at = input[\"recieved_at\"]\n    rag_text = input[\"rag_text\"\
+          ]\n\n    yyyymmdd = r_at[:4] + r_at[5:7] + r_at[8:10]\n\n    # --------------------------\n\
+          \    # ① OpenAI embedding を生成\n    # --------------------------\n    embed_url\
+          \ = \"https://api.openai.com/v1/embeddings\"\n    embed_headers = {\n  \
+          \      \"Authorization\": f\"Bearer {OPENAI_KEY}\",\n        \"Content-Type\"\
+          : \"application/json\"\n    }\n    embed_payload = {\n        \"model\"\
+          : \"text-embedding-3-small\",\n        \"input\": rag_text\n    }\n\n  \
+          \  try:\n        emb_res = requests.post(embed_url, headers=embed_headers,\
+          \ json=embed_payload, timeout=30)\n        if emb_res.status_code != 200:\n\
+          \            return {\n                \"success\": False,\n           \
+          \     \"stage\": \"embedding\",\n                \"status\": emb_res.status_code,\n\
+          \                \"response\": emb_res.text\n            }\n        embedding\
+          \ = emb_res.json()[\"data\"][0][\"embedding\"]\n    except Exception as\
+          \ e:\n        return {\"success\": False, \"stage\": \"embedding\", \"error\"\
+          : str(e)}\n\n    # --------------------------\n    # ② Pinecone に upsert\n\
+          \    # --------------------------\n    upsert_url = f\"{PINECONE_INDEX_HOST}/vectors/upsert\"\
+          \n    \n    upsert_headers = {\n        \"Api-Key\": PINECONE_API_KEY,\n\
+          \        \"Content-Type\": \"application/json\"\n    }\n\n    upsert_payload\
+          \ = {\n        \"namespace\": \"default\",\n        \"vectors\": [\n   \
+          \         {\n                \"id\": id,\n                \"values\": embedding,\n\
+          \                \"metadata\": {\n                    \"recieved_at\": int(yyyymmdd),\n\
+          \                    \"text\": rag_text\n                    }\n       \
+          \     }\n        ]\n    }\n\n    try:\n        up_res = requests.post(upsert_url,\
+          \ headers=upsert_headers, json=upsert_payload, timeout=30)\n\n        return\
+          \ {\n            \"success\": up_res.status_code == 200,\n            \"\
+          stage\": \"upsert\",\n            \"status\": up_res.status_code,\n    \
+          \        \"error\": \"\",\n            \"response\": up_res.text\n     \
+          \   }\n\n    except Exception as e:\n        return {\n            \"success\"\
+          : False,\n            \"stage\": \"upsert\",\n            \"status\": None,\n\
+          \            \"error\": str(e),\n            \"response\": \"\"\n      \
+          \      }\n            "
+        code_language: python3
+        isInIteration: true
+        isInLoop: false
+        iteration_id: '1764765043040'
+        outputs:
+          error:
+            children: null
+            type: string
+          response:
+            children: null
+            type: string
+          stage:
+            children: null
+            type: string
+          status:
+            children: null
+            type: number
+          success:
+            children: null
+            type: boolean
+        selected: false
+        title: Pineconeにインデックス
+        type: code
+        variables:
+        - value_selector:
+          - '1764765043040'
+          - item
+          value_type: string
+          variable: input
+        - value_selector:
+          - env
+          - OPENAI_API_KEY
+          value_type: string
+          variable: OPENAI_KEY
+        - value_selector:
+          - env
+          - PINECONE_API_KEY
+          value_type: string
+          variable: PINECONE_API_KEY
+        - value_selector:
+          - env
+          - PINECONE_INDEX_HOST
+          value_type: string
+          variable: PINECONE_INDEX_HOST
+      height: 52
+      id: '1764765067882'
+      parentId: '1764765043040'
+      position:
+        x: 128
+        y: 68
+      positionAbsolute:
+        x: 1724.2545189572686
+        y: 907.1342195318049
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 1002
+    - data:
+        code: "import os\n\ndef main(OPENAI_API_KEY: str):\n    return {\n       \
+          \ \"result\": OPENAI_API_KEY,\n    }\n"
+        code_language: python3
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: テストコード
+        type: code
+        variables:
+        - value_selector:
+          - env
+          - OPENAI_API_KEY
+          value_type: string
+          variable: OPENAI_API_KEY
+      height: 52
+      id: '1764765191211'
+      position:
+        x: -84.91398461735255
+        y: 1196.5598377302401
+      positionAbsolute:
+        x: -84.91398461735255
+        y: 1196.5598377302401
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import json\n\ndef main(anken: str):\n    data = json.loads(anken)\n\
+          \n    # --- Pinecone への検索テキストを作成 ---\n    search_text = f\"\"\"\n案件名: {data.get(\"\
+          案件名\")}\n必須スキル: {data.get(\"必須スキル\")}\n作業場所: {data.get(\"作業場所\")}\n単価: {data.get(\"\
+          単価\")}\n備考: {data.get(\"備考\")}\n\"\"\"\n\n    return {\n        \"formatted\"\
+          : data,\n        \"search_text\": search_text\n    }"
+        code_language: python3
+        outputs:
+          formatted:
+            children: null
+            type: object
+          search_text:
+            children: null
+            type: string
+        selected: false
+        title: 要員データ整形
+        type: code
+        variables:
+        - value_selector:
+          - '1762927604277'
+          - anken
+          value_type: string
+          variable: anken
+      height: 52
+      id: '1764840586633'
+      position:
+        x: 329.12874340171004
+        y: 1535.9854745416778
+      positionAbsolute:
+        x: 329.12874340171004
+        y: 1535.9854745416778
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import requests\nimport json\n\ndef main(search_text: str, formatted:\
+          \ dict, OPENAI_API_KEY: str, PINECONE_API_KEY: str, PINECONE_INDEX_HOST:\
+          \ str):\n\n    # ① OpenAI 埋め込み生成\n    emb_url = \"https://api.openai.com/v1/embeddings\"\
+          \n    emb_res = requests.post(\n        emb_url,\n        headers={\n  \
+          \          \"Authorization\": f\"Bearer {OPENAI_API_KEY}\",\n          \
+          \  \"Content-Type\": \"application/json\"\n        },\n        json={\"\
+          model\": \"text-embedding-3-small\", \"input\": search_text}\n    )\n\n\
+          \    embedding = emb_res.json()[\"data\"][0][\"embedding\"]\n\n    # ② Pinecone\
+          \ Query（相似ベクトル検索）\n    query_url = f\"{PINECONE_INDEX_HOST}/query\"\n\n\
+          \    q_res = requests.post(\n        query_url,\n        headers={\n   \
+          \         \"Api-Key\": PINECONE_API_KEY,\n            \"Content-Type\":\
+          \ \"application/json\"\n        },\n        json={\n            \"topK\"\
+          : 15,\n            \"vector\": embedding,\n            \"includeMetadata\"\
+          : True,\n            \"namespace\": \"default\"\n        }\n    )\n\n  \
+          \  results = q_res.json().get(\"matches\", [])\n\n    # ③ LLM 用に検索結果をテキスト整形（←\
+          \ 追加）\n    if not results:\n        matches_text = \"検索結果がありませんでした。\"\n\
+          \    else:\n        lines = []\n        for m in results:\n            lines.append(\n\
+          \                f\"■ 要員ID: {m.get('id')}\\n\"\n                f\"スコア:\
+          \ {m.get('score')}\\n\"\n                f\"{m.get('metadata', {}).get('text',\
+          \ '').strip()}\\n\"\n                \"-------------------------\"\n   \
+          \         )\n        matches_text = \"\\n\".join(lines)\n\n    # ④ すべてを返却（LLM\
+          \ ノードで利用可能）\n    return {\n        \"pinecone_matches\": results,  # ← Arrayも残す\n\
+          \        \"matches_text\": matches_text,  # ← LLM が読む用の整形テキスト\n        \"\
+          formatted\": formatted         # ← 元のデータも保持\n    }\n"
+        code_language: python3
+        outputs:
+          formatted:
+            children: null
+            type: object
+          matches_text:
+            children: null
+            type: string
+          pinecone_matches:
+            children: null
+            type: array[object]
+        selected: false
+        title: Pinecone検索
+        type: code
+        variables:
+        - value_selector:
+          - '1764840586633'
+          - search_text
+          value_type: string
+          variable: search_text
+        - value_selector:
+          - '1764840586633'
+          - formatted
+          value_type: object
+          variable: formatted
+        - value_selector:
+          - env
+          - OPENAI_API_KEY
+          value_type: string
+          variable: OPENAI_API_KEY
+        - value_selector:
+          - env
+          - PINECONE_API_KEY
+          value_type: string
+          variable: PINECONE_API_KEY
+        - value_selector:
+          - env
+          - PINECONE_INDEX_HOST
+          value_type: string
+          variable: PINECONE_INDEX_HOST
+      height: 52
+      id: '1764843063567'
+      position:
+        x: 631.12874340171
+        y: 1535.9854745416778
+      positionAbsolute:
+        x: 631.12874340171
+        y: 1535.9854745416778
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        outputs:
+        - value_selector:
+          - '1764844053157'
+          - text
+          value_type: string
+          variable: text
+        - value_selector:
+          - '1764844053157'
+          - reasoning_content
+          value_type: string
+          variable: reasoning_content
+        selected: false
+        title: 出力
+        type: end
+      height: 114
+      id: '1764843640231'
+      position:
+        x: 1220.9032652539613
+        y: 1535.9854745416778
+      positionAbsolute:
+        x: 1220.9032652539613
+        y: 1535.9854745416778
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params: {}
+          mode: chat
+          name: gpt-4.1-mini
+          provider: langgenius/openai/openai
+        prompt_template:
+        - id: 6ba20fce-03a2-4849-92b8-d8a2aba7ab74
+          role: system
+          text: "あなたは案件と要員のマッチングアドバイザーです。\n以下の案件情報と ベクトルDBから検索された候補者リストを元に、\n上位5名についてJSON形式で以下を出力してください：\n\
+            【重要ルール】\n- JSON 以外の文字(文章・説明・```など)は絶対に出力しない\n- 配列やオブジェクトを閉じ忘れない\n- 「推奨アクション」は\
+            \ candidates 配列の外に置く\n- 数値（点数）は文字列ではなく number として返す\n- JSON はトップレベルで 1つだけ\n\
+            \n【出力形式（厳守）】\n{\n  \"candidates\": [\n    {\n      \"要員ID\": \"...\",\n\
+                  \"受信日時\": \"...\",\n      \"要員情報\": {\n        \"氏名\": \"...\",\n\
+            \        \"年齢\": \"...\",\n        \"スキル\": \"...\",\n        \"希望単価\"\
+            : \"...\",\n        \"最寄駅\": \"...\",\n        \"希望勤務形態\": \"...\",\n\
+                    \"備考\": \"...\"\n      },\n      \"案件とのマッチ度（100点満点）\": 0,\n   \
+            \   \"理由コメント\": \"...\"\n    }\n  ],\n  \"推奨アクション\": [\n      \"〜〜〜〜\"\
+            ,\n      \"〜〜〜〜\"\n  ]\n}\n\n\n【案件情報】\n{{#1764843063567.formatted#}}\n\
+            \n【検索結果】\n{{#1764843063567.matches_text#}}\n\n判断基準について\n- スキルや希望勤務形態、備考に書かれている事項などに基づき、総合的に判定すること\n\
+            - 受信日時が概ね4週間以内の要員を選択し、日時が近い方が確度が高いため、スコアを加点する\n\n注意事項\n- 出力はJSONのみとし、コードブロックや補足などは付加しないでください\n\
+            - 推奨アクションは、担当者として検討すべき項目や行動を示してください"
+        selected: false
+        title: 要員マッチングLLM
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1764844053157'
+      position:
+        x: 925.7621183398923
+        y: 1535.9854745416778
+      positionAbsolute:
+        x: 925.7621183398923
+        y: 1535.9854745416778
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -293.10363004526664
+      y: 296.734595917388
+      zoom: 0.5614550504705814
+  rag_pipeline_variables: []

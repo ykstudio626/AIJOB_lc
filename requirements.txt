@@ -1,0 +1,6 @@
+langchain
+langchain-openai
+langchain-pinecone
+requests
+pydantic
+python-dotenv
