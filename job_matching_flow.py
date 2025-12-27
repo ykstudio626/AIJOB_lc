@@ -172,6 +172,7 @@ def structure_anken_data(raw_text: str, item: Dict) -> Dict:
     result = chain.invoke({"input_text": raw_text})
     return result
 
+# 構造化フロー（要員）
 def format_yoin_flow(params: Dict[str, Any]):
     """構造化フロー（要員）"""
     print("Starting format_yoin flow...")
@@ -197,6 +198,7 @@ def format_yoin_flow(params: Dict[str, Any]):
     
     print("format_yoin flow completed.")
 
+# 構造化フロー（案件）
 def format_anken_flow(params: Dict[str, Any]):
     """構造化フロー（案件）"""
     print("Starting format_anken flow...")
@@ -222,6 +224,7 @@ def format_anken_flow(params: Dict[str, Any]):
     
     print("format_anken flow completed.")
 
+# RAG登録フロー（要員）
 def index_yoin_flow(params: Dict[str, Any]):
     """RAG登録フロー（要員）"""
     print("Starting index_yoin flow...")
@@ -265,6 +268,7 @@ def index_yoin_flow(params: Dict[str, Any]):
     
     print("index_yoin flow completed.")
 
+# 要員マッチフロー
 def matching_yoin_flow(query: str, anken: str):
     """要員マッチフロー"""
     print("Starting matching_yoin flow...")
