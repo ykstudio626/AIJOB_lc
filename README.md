@@ -254,6 +254,27 @@ curl -X POST "http://localhost:8000/matching_yoin" \
   }'
 ```
 
+### 外部起動コマンド（ローカル）
+```
+# start.sh を作成
+#!/bin/bash
+cd /Users/yusukekohno/Documents/AIJOB_lc
+source venv/bin/activate
+python main.py
+```
+```
+chmod +x start.sh
+./start.sh  # これで簡単に起動可能
+```
+
+### サーバ再起動
+自動再起動にすると無限ループになるため、手動で起動する
+```
+# サーバー停止 (Ctrl+C)
+# 再起動
+source venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
 ### APIの利点
 
 - **外部連携**: GASや他のシステムから簡単に呼び出し可能

@@ -1,13 +1,20 @@
 # FastAPIアプリのエントリーポイント
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from job_matching_flow import (
-    format_yoin_flow,
-    format_anken_flow,
-    index_yoin_flow,
-    matching_yoin_flow
-)
+from pydantic import BaseModel
+from typing import Optional
 import uvicorn
+
+# Pydantic models for API requests
+class WorkflowParams(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    limit: Optional[int] = None
+    offset: Optional[int] = None
+
+class MatchingRequest(BaseModel):
+    query: str
+    anken: str
 
 app = FastAPI(
     title="Job Matching API",
@@ -25,45 +32,50 @@ app.add_middleware(
 )
 
 @app.post("/format_yoin")
-async def api_format_yoin(params: dict = None):
+async def api_format_yoin(params: WorkflowParams = None):
     """要員データ構造化API"""
     try:
+        from job_matching_flow import format_yoin_flow
         if params is None:
-            params = {}
-        format_yoin_flow(params)
+            params = WorkflowParams()
+        params_dict = params.model_dump()
+        format_yoin_flow(params_dict)
         return {"status": "success", "message": "要員データ構造化完了"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/format_anken")
-async def api_format_anken(params: dict = None):
+async def api_format_anken(params: WorkflowParams = None):
     """案件データ構造化API"""
     try:
+        from job_matching_flow import format_anken_flow
         if params is None:
-            params = {}
-        format_anken_flow(params)
+            params = WorkflowParams()
+        params_dict = params.model_dump()
+        format_anken_flow(params_dict)
         return {"status": "success", "message": "案件データ構造化完了"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/index_yoin")
-async def api_index_yoin(params: dict = None):
+async def api_index_yoin(params: WorkflowParams = None):
     """要員データRAG登録API"""
     try:
+        from job_matching_flow import index_yoin_flow
         if params is None:
-            params = {}
-        index_yoin_flow(params)
+            params = WorkflowParams()
+        params_dict = params.model_dump()
+        index_yoin_flow(params_dict)
         return {"status": "success", "message": "要員データRAG登録完了"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/matching_yoin")
-async def api_matching_yoin(request: dict):
+async def api_matching_yoin(request: MatchingRequest):
     """要員マッチングAPI"""
     try:
-        query = request.get("query", "")
-        anken = request.get("anken", "{}")
-        result = matching_yoin_flow(query, anken)
+        from job_matching_flow import matching_yoin_flow
+        result = matching_yoin_flow(request.query, request.anken)
         return {"status": "success", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -79,5 +91,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True  # 開発時のみ
+        reload=False  # 開発時は手動リロード
     )
