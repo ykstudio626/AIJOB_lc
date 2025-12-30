@@ -115,19 +115,20 @@ def structure_yoin_data(raw_text: str, item: Dict) -> Dict:
 {{
   "id": "（ここに上記のidをそのまま記入）",
   "date": "（ここに上記の受信日時をそのまま記入）",
-  "name": "",
-  "age":"",
-  "skill": "",
-  "station": "",
-  "work_style": "",
-  "price": "",
-  "etc": "",
+  "name": "（ここに要員のイニシャルを記入）",
+  "age":"（ここに要員の年齢を記入）",
+  "skill": "（ここに要員のスキルを記入）",
+  "station": "（ここに要員の最寄駅）",
+  "work_style": "（ここに要員の希望勤務形態を記入）",
+  "price": "（ここに要員の希望単価を記入）",
+  "etc": "（ここにその他備考を記入）",
   "subject": ""
 }}
 
 - 出力は必ず上記のJSONのみで返してください。
+- "name"は「A.B」の形式で、イニシャル以外のテキストは含めないでください。
 - コードブロックや説明文は不要です。
-- 年齢は「歳」「才」などは含めないでください
+- "age"は「歳」「才」などは含めないでください。
 - idとdateは絶対に入力値と一致させてください。
 """
     
@@ -160,14 +161,14 @@ def structure_anken_data(raw_text: str, item: Dict) -> Dict:
 {{
   "id": "（ここに上記のidをそのまま記入）",
   "date": "（ここに上記の受信日時をそのまま記入）",
-  "name": "",
+  "name": "（ここに案件名を記入）",
   "skill": "",
-  "station": "",
-  "work_style": "",
+  "station": "（ここに勤務地の最寄駅を記入）",
+  "work_style": "（ここに勤務形態を記入）",
   "schedule": "",
-  "price": "",
-  "etc": "",
-  "subject": ""
+  "price": "（ここに単価、単金を記入）",
+  "etc": "（ここにその他備考を記入）",
+  "subject": "（ここに件名を記入）"
 }}
 
 注意:
@@ -234,6 +235,7 @@ def format_anken_flow(params: Dict[str, Any]):
     records = data.get("records", [])
     
     for record in records:
+        raw_text = record["本文"]
         # Format item
         formatted_text = format_anken_item(record)
 
@@ -248,6 +250,8 @@ def format_anken_flow(params: Dict[str, Any]):
             print(f"Raw response: {structured.get('raw_response', '')}")
             continue
         
+        structured["raw_input"] = raw_text
+
         print(structured)
         
         # Post back to GAS

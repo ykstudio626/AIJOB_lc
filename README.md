@@ -59,6 +59,53 @@ python job_matching_flow.py <action> [parameters...]
 - requests
 - pydantic
 - python-dotenv
+- fastapi
+- uvicorn
+
+## API Usage
+
+The application can also be run as a FastAPI server for external access.
+
+### Starting the API Server
+
+```bash
+# Development mode
+python main.py
+
+# Or using uvicorn directly
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### API Endpoints
+
+- **POST /format_yoin**: Structure personnel data
+- **POST /format_anken**: Structure job data
+- **POST /index_yoin**: Index personnel data to vector DB
+- **POST /matching_yoin**: Match personnel to job
+- **GET /health**: Health check
+
+### API Documentation
+
+Once the server is running, visit:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### Example API Calls
+
+```bash
+# Format personnel data
+curl -X POST "http://localhost:8000/format_yoin" \
+  -H "Content-Type: application/json" \
+  -d '{"start_date": "20240101", "end_date": "20241231", "limit": 100}'
+
+# Match personnel
+curl -X POST "http://localhost:8000/matching_yoin" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Python developer needed",
+    "anken": "{\"name\":\"Python開発\",\"skill\":\"Python,Django\",\"station\":\"東京\",\"price\":\"50万円\",\"etc\":\"\"}"
+  }'
+```
 
 
 
@@ -122,17 +169,17 @@ python job_matching_flow.py <action> [parameters...]
 
 ### 1. 要員データの構造化
 ```bash
-python job_matching_flow.py format_yoin start_date=2024-01-01 end_date=2024-12-31 limit=100
+python job_matching_flow.py format_yoin start_date=20240101 end_date=20241231 limit=100
 ```
 
 ### 2. 案件データの構造化
 ```bash
-python job_matching_flow.py format_anken start_date=2024-01-01 end_date=2024-12-31 limit=100
+python job_matching_flow.py format_anken start_date=20240101 end_date=20241231 limit=100
 ```
 
 ### 3. 要員データのRAG登録
 ```bash
-python job_matching_flow.py index_yoin start_date=2024-01-01 end_date=2024-12-31 limit=100
+python job_matching_flow.py index_yoin start_date=20240101 end_date=20241231 limit=100
 ```
 
 ### 4. 要員マッチング
@@ -161,3 +208,55 @@ python job_matching_flow.py matching_yoin query="Python開発者募集" anken='{
 - フローが図示されていて明快、説明しやすい（分岐が多いフローで差が出る）
 - スタートしやすい、10分でフローが作れる
 - チャットボットがすぐ公開できる（フローよりもチャットボット向け？）
+
+## API使用方法
+
+このアプリケーションはFastAPIサーバーとしても実行でき、外部からのアクセスが可能です。
+
+### APIサーバーの起動
+
+```bash
+# 開発モード
+python main.py
+
+# またはuvicornコマンド
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### APIエンドポイント
+
+- **POST /format_yoin**: 要員データの構造化
+- **POST /format_anken**: 案件データの構造化
+- **POST /index_yoin**: 要員データをベクトルDBに登録
+- **POST /matching_yoin**: 要員と案件のマッチング
+- **GET /health**: ヘルスチェック
+
+### APIドキュメント
+
+サーバー起動後、以下のURLでAPIドキュメントを確認できます：
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+### API呼び出し例
+
+```bash
+# 要員データの構造化
+curl -X POST "http://localhost:8000/format_yoin" \
+  -H "Content-Type: application/json" \
+  -d '{"start_date": "20240101", "end_date": "20241231", "limit": 100}'
+
+# 要員マッチング
+curl -X POST "http://localhost:8000/matching_yoin" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Python開発者募集",
+    "anken": "{\"name\":\"Python開発\",\"skill\":\"Python,Django\",\"station\":\"東京\",\"price\":\"50万円\",\"etc\":\"\"}"
+  }'
+```
+
+### APIの利点
+
+- **外部連携**: GASや他のシステムから簡単に呼び出し可能
+- **スケーラビリティ**: 負荷分散やコンテナ化が容易
+- **保守性**: APIドキュメントの自動生成、型チェック
+- **拡張性**: ミドルウェア、認証、キャッシュなどの追加が簡単
