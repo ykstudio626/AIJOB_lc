@@ -18,9 +18,33 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_HOST = os.getenv("PINECONE_INDEX_HOST")
 
-# Initialize LangChain components
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=OPENAI_API_KEY)
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small", api_key=OPENAI_API_KEY)
+# Initialize LangChain components (遅延初期化)
+llm = None
+embeddings = None
+vectorstore = None
+
+def get_llm():
+    global llm
+    if llm is None:
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=OPENAI_API_KEY)
+    return llm
+
+def get_embeddings():
+    global embeddings
+    if embeddings is None:
+        embeddings = OpenAIEmbeddings(model="text-embedding-3-small", api_key=OPENAI_API_KEY)
+    return embeddings
+
+def get_vectorstore():
+    global vectorstore
+    if vectorstore is None:
+        vectorstore = PineconeVectorStore.from_existing_index(
+            index_name="yoin-index",
+            embedding=get_embeddings(),
+            pinecone_api_key=PINECONE_API_KEY,
+            host=PINECONE_INDEX_HOST
+        )
+    return vectorstore
 
 # Pydantic models for structured output
 class YoinStructured(BaseModel):
@@ -133,7 +157,7 @@ def structure_yoin_data(raw_text: str, item: Dict) -> Dict:
 """
     
     # LLMを直接呼び出し
-    response = llm.invoke(prompt_text)
+    response = get_llm().invoke(prompt_text)
     
     # JSONパースとPydanticバリデーション
     try:
@@ -180,7 +204,7 @@ def structure_anken_data(raw_text: str, item: Dict) -> Dict:
 """
     
     # LLMを直接呼び出し
-    response = llm.invoke(prompt_text)
+    response = get_llm().invoke(prompt_text)
     
     # JSONパースとPydanticバリデーション
     try:
@@ -276,7 +300,7 @@ def index_yoin_flow(params: Dict[str, Any]):
     # Initialize Pinecone vector store
     vectorstore = PineconeVectorStore(
         index_name="yoin2",  # Assuming index name from host
-        embedding=embeddings,
+        embedding=get_embeddings(),
         pinecone_api_key=PINECONE_API_KEY
     )
     
@@ -328,7 +352,7 @@ def matching_yoin_flow(query: str, anken: str):
     # Initialize Pinecone vector store
     vectorstore = PineconeVectorStore(
         index_name="yoin2",
-        embedding=embeddings,
+        embedding=get_embeddings(),
         pinecone_api_key=PINECONE_API_KEY
     )
     
@@ -401,7 +425,7 @@ def matching_yoin_flow(query: str, anken: str):
 - actionsは、担当者として検討すべき項目や行動を示してください
 """)
     
-    chain = prompt | llm | JsonOutputParser(pydantic_object=MatchingResult)
+    chain = prompt | get_llm() | JsonOutputParser(pydantic_object=MatchingResult)
     result = chain.invoke({
         "anken_formatted": json.dumps(anken_data, ensure_ascii=False),
         "matches_text": matches_text

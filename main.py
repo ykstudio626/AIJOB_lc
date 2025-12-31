@@ -1,5 +1,5 @@
 # FastAPIアプリのエントリーポイント
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 @app.post("/format_yoin")
-async def api_format_yoin(params: WorkflowParams = None):
+async def api_format_yoin(params: WorkflowParams = Body(default=None)):
     """要員データ構造化API"""
     try:
         from job_matching_flow import format_yoin_flow
@@ -45,7 +45,7 @@ async def api_format_yoin(params: WorkflowParams = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/format_anken")
-async def api_format_anken(params: WorkflowParams = None):
+async def api_format_anken(params: WorkflowParams = Body(default=None)):
     """案件データ構造化API"""
     try:
         from job_matching_flow import format_anken_flow
@@ -58,7 +58,7 @@ async def api_format_anken(params: WorkflowParams = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/index_yoin")
-async def api_index_yoin(params: WorkflowParams = None):
+async def api_index_yoin(params: WorkflowParams = Body(default=None)):
     """要員データRAG登録API"""
     try:
         from job_matching_flow import index_yoin_flow
@@ -91,5 +91,6 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=False  # 開発時は手動リロード
+        reload=False,
+        log_level="info"
     )
