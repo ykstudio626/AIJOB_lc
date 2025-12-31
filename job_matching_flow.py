@@ -404,6 +404,19 @@ def matching_yoin_flow(query: str, anken: str):
       "comment": "..."
     }}
   ],
+  "comparision": [
+      {{"（要員イニシャル）":{{
+          "skill_match": "...",
+          "work_style_match": "...",
+          "price_match": "..."
+        }},
+      {{"（要員イニシャル）":{{
+          "skill_match": "...",
+          "work_style_match": "...",
+          "price_match": "..."
+        }},
+    }} 
+  ],
   "actions": [
       "〜〜〜〜",
       "〜〜〜〜"
@@ -423,6 +436,7 @@ def matching_yoin_flow(query: str, anken: str):
 注意事項
 - 出力はJSONのみとし、コードブロックや補足などは付加しないでください
 - actionsは、担当者として検討すべき項目や行動を示してください
+- comparisionは、要員ごとに「スキル」「勤務形態」「単価」のマッチ度を「◎」、「⚪」、「△」、「×」で表してください
 """)
     
     chain = prompt | get_llm() | JsonOutputParser(pydantic_object=MatchingResult)
