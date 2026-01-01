@@ -8,6 +8,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
+from prompts import MATCHING_PROMPT
 
 # Load environment variables
 load_dotenv()
@@ -80,6 +81,7 @@ class MatchCandidate(BaseModel):
 
 class MatchingResult(BaseModel):
     candidates: List[MatchCandidate]
+    comparision: List[Dict[str, Any]]
     actions: List[str]
 
 def get_data_from_gas(type_: str, params: Dict[str, Any] = None) -> Dict:
@@ -363,81 +365,21 @@ def matching_yoin_flow(query: str, anken: str):
     matches_text = ""
     if docs:
         for doc, score in docs:
+            print("debug")
+            print(doc.page_content)
             matches_text += f"""
 ■ 要員ID: {doc.id}
 スコア: {score}
-{doc.metadata.get('text', '')}
+{doc.page_content}
 -------------------------
 """.strip() + "\n"
     else:
         matches_text = "検索結果がありませんでした。"
     
     # LLM matching
-    prompt = PromptTemplate.from_template("""
-あなたは案件と要員のマッチングアドバイザーです。
-以下の案件情報と ベクトルDBから検索された候補者リストを元に、
-上位5名についてJSON形式で以下を出力してください：
+    prompt = PromptTemplate.from_template(MATCHING_PROMPT)
 
-【重要ルール】
-- JSON 以外の文字(文章・説明・```など)は絶対に出力しない
-- 配列やオブジェクトを閉じ忘れない
-- 「actions」は candidates 配列の外に置く
-- 数値（点数）は文字列ではなく number として返す
-- JSON はトップレベルで 1つだけ
-
-【出力形式（厳守）】
-{{
-  "candidates": [
-    {{
-      "yoin_id": "...",
-      "date": "...",
-      "yoin_info": {{
-        "name": "...",
-        "age": "...",
-        "skill": "...",
-        "price": "...",
-        "station": "...",
-        "work_style": "...",
-        "etc": "..."
-      }},
-      "match_score": 0,
-      "comment": "..."
-    }}
-  ],
-  "comparision": [
-      {{"（要員イニシャル）":{{
-          "skill_match": "...",
-          "work_style_match": "...",
-          "price_match": "..."
-        }},
-      {{"（要員イニシャル）":{{
-          "skill_match": "...",
-          "work_style_match": "...",
-          "price_match": "..."
-        }},
-    }} 
-  ],
-  "actions": [
-      "〜〜〜〜",
-      "〜〜〜〜"
-  ]
-}}
-
-【案件情報】
-{anken_formatted}
-
-【検索結果】
-{matches_text}
-
-判断基準について
-- スキルや希望勤務形態、備考に書かれている事項などに基づき、総合的に判定すること
-- 受信日時が概ね4週間以内の要員を選択し、日時が近い方が確度が高いため、スコアを加点する
-
-注意事項
-- 出力はJSONのみとし、コードブロックや補足などは付加しないでください
-- actionsは、担当者として検討すべき項目や行動を示してください
-- comparisionは、要員ごとに「スキル」「勤務形態」「単価」のマッチ度を「◎」、「⚪」、「△」、「×」で表してください
-""")
+    print("debug" + MATCHING_PROMPT)
     
     chain = prompt | get_llm() | JsonOutputParser(pydantic_object=MatchingResult)
     result = chain.invoke({
