@@ -147,7 +147,7 @@ mv ~/Downloads/job-matching-key.pem ~/.ssh/
 # EC2のパブリックIPアドレスを確認してから接続
 # <YOUR_EC2_PUBLIC_IP> を実際のIPアドレスに置き換え
 # Ubuntuの場合、ユーザー名は「ubuntu」
-ssh -i ~/.ssh/job-matching-key.pem ubuntu@<YOUR_EC2_PUBLIC_IP>
+ssh -i ~/.ssh/myawskey.pem ubuntu@<YOUR_EC2_PUBLIC_IP>
 ```
 
 ### 接続できない場合の確認事項
@@ -167,11 +167,11 @@ sudo apt update && sudo apt upgrade -y
 
 ### Step 2: 必要なパッケージのインストール
 ```bash
-# Python 3.11のインストール
+# Python 3.12のインストール
 sudo apt install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install -y python3.11 python3.11-venv python3.11-dev python3-pip
+sudo apt install -y python3.12 python3.12-venv python3.12-dev python3-pip
 
 # Gitのインストール
 sudo apt install -y git
@@ -180,18 +180,34 @@ sudo apt install -y git
 sudo apt install -y build-essential
 ```
 
-### Step 3: Python仮想環境の作成
+### Step 3: pythonコマンドのエイリアス設定
+```bash
+# python コマンドで python3.12 が起動するようにエイリアス設定
+echo 'alias python=python3.12' >> ~/.bashrc
+echo 'alias python3=python3.12' >> ~/.bashrc
+
+# 設定を反映
+source ~/.bashrc
+
+# 確認
+python --version  # Python 3.12.x と表示されればOK
+```
+
+### Step 4: Python仮想環境の作成
 ```bash
 # アプリケーション用ディレクトリの作成
 sudo mkdir -p /opt/job-matching-api
 sudo chown ubuntu:ubuntu /opt/job-matching-api
 cd /opt/job-matching-api
 
-# 仮想環境の作成
-python3.11 -m venv venv
+# 仮想環境の作成（エイリアスはスクリプト実行時に効かないため python3.12 を直接指定）
+python3.12 -m venv venv
 
 # 仮想環境の有効化
 source venv/bin/activate
+
+# 仮想環境内では python コマンドが使える
+python --version  # Python 3.12.x
 ```
 
 ---
@@ -457,7 +473,7 @@ sudo ufw enable
 # 仮想環境を再作成
 cd /opt/job-matching-api
 rm -rf venv
-python3.11 -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r app/requirements.txt
