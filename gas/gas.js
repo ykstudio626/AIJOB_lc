@@ -402,6 +402,8 @@ function getSheetData(sheetName, options) {
 /*****************************************************
  * ✅ doGet - Difyから安全にデータ取得
  * ?type=yoin または ?type=anken
+ * ?type=yoin_format&id=xxxxx で特定IDを取得
+ * ?type=anken_format&id=xxxxx,yyyyy で複数IDを取得
  *****************************************************/
 function doGet(e) {
   const GET_LIMIT = 100;
@@ -413,6 +415,26 @@ function doGet(e) {
   if (type === "anken") sheetName = "gmail案件情報";
   if (type === "yoin_format") sheetName = "最新要員情報";
   if (type === "anken_format") sheetName = "最新案件情報";
+
+  // ★ ID指定がある場合は別処理
+  const idParam = e?.parameter?.id ? String(e.parameter.id) : null;
+  if (idParam) {
+    const ids = idParam.split(",").map(id => id.trim()).filter(id => id);
+    const data = getSheetDataByIds(sheetName, ids);
+    
+    const json = JSON.stringify({
+      debug: {
+        hasE: !!e,
+        keys: Object.keys(p),
+        ids: ids
+      },
+      type: type,
+      count: data.records.length,
+      records: data.records
+    });
+    
+    return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+  }
 
   const limit = e.parameter.limit ? Number(e.parameter.limit) : GET_LIMIT;
   const offset = e.parameter.offset ? Number(e.parameter.offset) : 0;
@@ -450,6 +472,55 @@ function doGet(e) {
   });
 
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
+
+/*****************************************************
+ * ✅ getSheetDataByIds - 特定IDのデータを取得
+ * @param {string} sheetName - シート名
+ * @param {string[]} ids - 取得するIDの配列
+ * @return {Object} { records: [...] }
+ *****************************************************/
+function getSheetDataByIds(sheetName, ids) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+  
+  if (!sheet) {
+    return { error: `シート「${sheetName}」が見つかりません`, records: [] };
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  
+  if (lastRow < 2) {
+    return { records: [] };
+  }
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const allValues = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  
+  // ID列のインデックスを探す
+  const idIdx = headers.indexOf("ID");
+  if (idIdx === -1) {
+    return { error: "ID列が見つかりません", records: [] };
+  }
+
+  // IDセットを作成（高速検索用）
+  const idSet = new Set(ids);
+  
+  const records = [];
+  for (const row of allValues) {
+    const rowId = String(row[idIdx]).trim();
+    
+    if (idSet.has(rowId)) {
+      const obj = {};
+      headers.forEach((h, i) => {
+        obj[h] = row[i];
+      });
+      records.push(obj);
+    }
+  }
+
+  return { records: records };
 }
 
 /*****************************************************

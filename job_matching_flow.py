@@ -109,7 +109,7 @@ def format_yoin_item(item: Dict) -> str:
 以下は要員情報メールです。
 ID: {item.get('ID', '')}
 受信日時: {item.get('受信日時', '')}
-件名: {item.get('subject', '件名')}
+件名: {item.get('件名', '')}
 本文:
 {item.get('本文', '')}
 """
@@ -241,6 +241,8 @@ def format_yoin_flow(params: Dict[str, Any]):
             continue
         
         # Post back to GAS
+        # raw_inputフィールドを追加してメール本文をK列に保存
+        structured["raw_input"] = record.get('本文', '')
         post_data = {
             "type": "yoin",
             "record": structured
@@ -276,7 +278,8 @@ def format_anken_flow(params: Dict[str, Any]):
             print(f"Raw response: {structured.get('raw_response', '')}")
             continue
         
-        structured["raw_input"] = raw_text
+        # raw_inputフィールドを追加してメール本文をK列に保存
+        structured["raw_input"] = record.get('本文', '')
 
         print(structured)
         
