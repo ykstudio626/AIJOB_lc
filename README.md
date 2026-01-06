@@ -245,6 +245,11 @@ curl -X POST "http://localhost:8000/format_yoin" \
   -H "Content-Type: application/json" \
   -d '{"start_date": "20240101", "end_date": "20241231", "limit": 100}'
 
+# 案件データの構造化
+curl -X POST "http://localhost:8000/format_anken" \
+  -H "Content-Type: application/json" \
+  -d '{"start_date": "20240101", "end_date": "20241231", "limit": 100}'
+
 # 要員マッチング
 curl -X POST "http://localhost:8000/matching_yoin" \
   -H "Content-Type: application/json" \
