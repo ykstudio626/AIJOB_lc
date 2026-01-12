@@ -224,6 +224,11 @@ def format_yoin_flow(params: Dict[str, Any]):
     """構造化フロー（要員）"""
     print("Starting format_yoin flow...")
     
+    # with_indexパラメータをチェック
+    with_index = params.get("with_index", False)
+    if isinstance(with_index, str):
+        with_index = with_index.lower() == "true"
+    
     # Get data from GAS
     data = get_data_from_gas("yoin", params)
     records = data.get("records", [])
@@ -252,7 +257,14 @@ def format_yoin_flow(params: Dict[str, Any]):
         print(f"Processed yoin ID: {structured.get('id', 'unknown')}")
     
     print("format_yoin flow completed.")
-
+    
+    # with_index=Trueの場合、続けてRAG登録を実行
+    if with_index:
+        print("\n--- Starting automatic index_yoin flow ---")
+        # paramsからwith_indexを除外してindex_yoin_flowに渡す
+        index_params = {k: v for k, v in params.items() if k != "with_index"}
+        index_yoin_flow(index_params)
+        
 # 構造化フロー（案件）
 def format_anken_flow(params: Dict[str, Any]):
     """構造化フロー（案件）"""
@@ -402,7 +414,8 @@ def main(action: str, **kwargs):
         "start_date": kwargs.get("start_date"),
         "end_date": kwargs.get("end_date"),
         "limit": kwargs.get("limit"),
-        "offset": kwargs.get("offset")
+        "offset": kwargs.get("offset"),
+        "with_index": kwargs.get("with_index")
     }
     
     if action == "format_yoin":

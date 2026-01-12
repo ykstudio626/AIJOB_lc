@@ -170,6 +170,9 @@ curl -X POST "http://localhost:8000/matching_yoin" \
 ### 1. 要員データの構造化
 ```bash
 python job_matching_flow.py format_yoin start_date=20240101 end_date=20241231 limit=100
+
+# 構造化後に続けてRAG登録も行う場合（効率的）
+python job_matching_flow.py format_yoin start_date=20240101 end_date=20241231 limit=100 with_index=true
 ```
 
 ### 2. 案件データの構造化
