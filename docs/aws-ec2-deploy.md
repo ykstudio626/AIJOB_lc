@@ -10,10 +10,11 @@
 5. [環境構築](#環境構築)
 6. [アプリケーションのデプロイ](#アプリケーションのデプロイ)
 7. [systemdサービスの設定](#systemdサービスの設定)
-8. [Nginxの設定（オプション）](#nginxの設定オプション)
-9. [SSL証明書の設定（オプション）](#ssl証明書の設定オプション)
-10. [動作確認](#動作確認)
-11. [トラブルシューティング](#トラブルシューティング)
+8. [cronジョブの設定（定期実行）](#cronジョブの設定定期実行)
+9. [Nginxの設定（オプション）](#nginxの設定オプション)
+10. [SSL証明書の設定（オプション）](#ssl証明書の設定オプション)
+11. [動作確認](#動作確認)
+12. [トラブルシューティング](#トラブルシューティング)
 
 ---
 
@@ -319,11 +320,236 @@ sudo systemctl stop job-matching-api
 sudo systemctl restart job-matching-api
 
 # ログの確認
-sudo journalctl -u job-matching-api -f
+  sudo journalctl -u job-matching-api -f
 
 # 直近のログを確認
 sudo journalctl -u job-matching-api --since "1 hour ago"
 ```
+
+---
+
+## cronジョブの設定（定期実行）
+
+アプリケーションの定期的な処理（例：毎朝の案件データ構造化）を自動化するためにcronジョブを設定します。
+
+### Step 1: 自動実行用スクリプトの作成
+
+#### 案件データ自動構造化スクリプト
+```bash
+# スクリプトディレクトリの作成
+sudo mkdir -p /opt/job-matching-api/scripts
+sudo mkdir -p /opt/job-matching-api/logs
+
+# スクリプトファイルの作成
+sudo tee /opt/job-matching-api/scripts/daily_format_anken.sh << 'EOF'
+#!/bin/bash
+
+# 環境変数の設定
+export PATH="/usr/local/bin:/usr/bin:/bin"
+export LANG="en_US.UTF-8"
+
+# 日付計算（前日の日付を取得）
+YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+
+# ログファイルの設定
+LOG_DIR="/opt/job-matching-api/logs"
+LOG_FILE="${LOG_DIR}/daily_format_anken_$(date +%Y%m%d).log"
+
+# ログディレクトリの作成
+mkdir -p "$LOG_DIR"
+
+# ログ開始
+echo "===========================================" >> "$LOG_FILE"
+echo "Daily format_anken job started at $(date)" >> "$LOG_FILE"
+echo "Processing date: $YESTERDAY" >> "$LOG_FILE"
+echo "Current user: $(whoami)" >> "$LOG_FILE"
+echo "Current directory: $(pwd)" >> "$LOG_FILE"
+echo "===========================================" >> "$LOG_FILE"
+
+# プロジェクトディレクトリに移動
+cd /opt/job-matching-api/app
+
+# 仮想環境をアクティベート
+source /opt/job-matching-api/venv/bin/activate
+
+# Python環境の確認
+echo "Python version: $(python --version)" >> "$LOG_FILE"
+echo "Virtual environment: $VIRTUAL_ENV" >> "$LOG_FILE"
+
+# 案件構造化フローを実行
+echo "Executing: python job_matching_flow.py format_anken start_date=$YESTERDAY end_date=$YESTERDAY limit=500" >> "$LOG_FILE"
+
+python job_matching_flow.py format_anken start_date="$YESTERDAY" end_date="$YESTERDAY" limit=500 >> "$LOG_FILE" 2>&1
+
+# 実行結果のチェック
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "SUCCESS: Daily format_anken job completed successfully at $(date)" >> "$LOG_FILE"
+else
+    echo "ERROR: Daily format_anken job failed with exit code $EXIT_CODE at $(date)" >> "$LOG_FILE"
+fi
+
+echo "===========================================" >> "$LOG_FILE"
+echo "" >> "$LOG_FILE"
+
+# 古いログファイルの削除（30日以上古いもの）
+find "$LOG_DIR" -name "daily_format_anken_*.log" -mtime +30 -delete
+EOF
+
+# 実行権限の設定
+sudo chmod +x /opt/job-matching-api/scripts/daily_format_anken.sh
+sudo chown ubuntu:ubuntu /opt/job-matching-api/scripts/daily_format_anken.sh
+sudo chown -R ubuntu:ubuntu /opt/job-matching-api/logs
+```
+
+#### 要員データ自動構造化スクリプト（オプション）
+```bash
+sudo tee /opt/job-matching-api/scripts/daily_format_yoin.sh << 'EOF'
+#!/bin/bash
+
+# 環境変数の設定
+export PATH="/usr/local/bin:/usr/bin:/bin"
+export LANG="en_US.UTF-8"
+
+# 日付計算（前日の日付を取得）
+YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+
+# ログファイルの設定
+LOG_DIR="/opt/job-matching-api/logs"
+LOG_FILE="${LOG_DIR}/daily_format_yoin_$(date +%Y%m%d).log"
+
+# ログディレクトリの作成
+mkdir -p "$LOG_DIR"
+
+# ログ開始
+echo "===========================================" >> "$LOG_FILE"
+echo "Daily format_yoin job started at $(date)" >> "$LOG_FILE"
+echo "Processing date: $YESTERDAY" >> "$LOG_FILE"
+echo "===========================================" >> "$LOG_FILE"
+
+# プロジェクトディレクトリに移動
+cd /opt/job-matching-api/app
+
+# 仮想環境をアクティベート
+source /opt/job-matching-api/venv/bin/activate
+
+# 要員構造化フローを実行
+echo "Executing: python job_matching_flow.py format_yoin start_date=$YESTERDAY end_date=$YESTERDAY limit=500" >> "$LOG_FILE"
+
+python job_matching_flow.py format_yoin start_date="$YESTERDAY" end_date="$YESTERDAY" limit=500 >> "$LOG_FILE" 2>&1
+
+# 実行結果のチェック
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "SUCCESS: Daily format_yoin job completed successfully at $(date)" >> "$LOG_FILE"
+else
+    echo "ERROR: Daily format_yoin job failed with exit code $EXIT_CODE at $(date)" >> "$LOG_FILE"
+fi
+
+echo "===========================================" >> "$LOG_FILE"
+echo "" >> "$LOG_FILE"
+
+# 古いログファイルの削除（30日以上古いもの）
+find "$LOG_DIR" -name "daily_format_yoin_*.log" -mtime +30 -delete
+EOF
+
+sudo chmod +x /opt/job-matching-api/scripts/daily_format_yoin.sh
+sudo chown ubuntu:ubuntu /opt/job-matching-api/scripts/daily_format_yoin.sh
+```
+
+### Step 2: スクリプトのテスト実行
+```bash
+# 案件データ構造化スクリプトのテスト
+sudo -u ubuntu /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# ログファイルの確認
+tail -20 /opt/job-matching-api/logs/daily_format_anken_$(date +%Y%m%d).log
+```
+
+### Step 3: cronジョブの設定
+```bash
+# ubuntu ユーザーのcrontabを編集
+sudo -u ubuntu crontab -e
+
+# エディタが開いたら、以下の行を追加：
+
+# 毎朝4:30に前日分の案件データを構造化
+30 4 * * * /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# 毎朝5:00に前日分の要員データを構造化（オプション）
+0 5 * * * /opt/job-matching-api/scripts/daily_format_yoin.sh
+
+# 月曜日の朝6:00にインデックス更新（週1回、オプション）
+# 0 6 * * 1 /opt/job-matching-api/scripts/weekly_index_update.sh
+```
+
+### Step 4: crontabの確認
+```bash
+# 設定したcronジョブの確認
+sudo -u ubuntu crontab -l
+
+# cron サービスの状態確認
+sudo systemctl status cron
+```
+
+### cronの時刻設定例
+
+| 設定 | 説明 | cron表記 |
+|------|------|----------|
+| 毎朝4:30 | 毎日午前4時30分 | `30 4 * * *` |
+| 毎時0分 | 毎時ちょうど | `0 * * * *` |
+| 平日9:00 | 平日の午前9時 | `0 9 * * 1-5` |
+| 月1回 | 毎月1日午前2時 | `0 2 1 * *` |
+| 週1回 | 毎週日曜午前3時 | `0 3 * * 0` |
+
+### Step 5: ログローテーション設定（オプション）
+```bash
+# ログローテーション設定
+sudo tee /etc/logrotate.d/job-matching-api << 'EOF'
+/opt/job-matching-api/logs/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 644 ubuntu ubuntu
+}
+EOF
+```
+
+### 監視とメンテナンス
+
+#### ログの確認
+```bash
+# 最新のログファイルを確認
+tail -f /opt/job-matching-api/logs/daily_format_anken_$(date +%Y%m%d).log
+
+# 過去のログファイル一覧
+ls -la /opt/job-matching-api/logs/
+
+# cronの実行ログを確認
+sudo grep CRON /var/log/syslog | tail -20
+```
+
+#### トラブルシューティング
+```bash
+# cronサービスの再起動
+sudo systemctl restart cron
+
+# 手動でスクリプト実行してテスト
+sudo -u ubuntu /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# スクリプトのデバッグ実行
+bash -x /opt/job-matching-api/scripts/daily_format_anken.sh
+```
+
+#### よくある問題と対処法
+
+1. **権限エラー**: スクリプトファイルに実行権限があることを確認
+2. **パスエラー**: スクリプト内でフルパスを使用
+3. **環境変数**: cronは限定的な環境変数のみ使用するため、必要な変数は明示的に設定
+4. **仮想環境**: 正しいパスで仮想環境をアクティベート
 
 ---
 
@@ -507,3 +733,4 @@ echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 | 日付 | 内容 |
 |------|------|
 | 2026-01-01 | 初版作成 |
+| 2026-01-12 | cronジョブの設定セクション追加 |

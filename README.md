@@ -216,6 +216,9 @@ python job_matching_flow.py matching_yoin query="Python開発者募集" anken='{
 ### APIサーバーの起動
 
 ```bash
+# 仮想環境
+source venv/bin/activate 
+
 # 開発モード
 python main.py
 
