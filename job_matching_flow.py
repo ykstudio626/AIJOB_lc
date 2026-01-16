@@ -361,6 +361,7 @@ def matching_yoin_flow(query: str, anken: str):
     # Create search text
     search_text = f"""
 案件名: {anken_data.get('案件名', '')}
+重点キーワード: {anken_data.get('重点キーワード', '')}
 必須スキル: {anken_data.get('必須スキル', '')}
 作業場所: {anken_data.get('作業場所', '')}
 単価: {anken_data.get('単価', '')}

@@ -12,6 +12,9 @@ from langchain_pinecone import PineconeVectorStore
 
 load_dotenv()
 
+# 削除対象日付の設定
+DELETE_BEFORE_DATE = 20260110  # この日付より前のデータを削除
+
 def safe_delete_old_data():
     """安全にデータを確認・削除"""
     
@@ -37,15 +40,15 @@ def safe_delete_old_data():
         # 削除対象日時
         cutoff_date = datetime(2026, 1, 9)
         
-        print(f"🗓️  削除対象: recieved_at < 20260109 のデータ")
+        print(f"🗓️  削除対象: recieved_at < {DELETE_BEFORE_DATE} のデータ")
         
         # Step 1: 削除件数を事前確認
         print("\n🔍 削除対象件数を確認中...")
         
         # 削除対象をカウント（実際の削除は行わない）
         delete_filters = [
-            {"recieved_at": {"$lt": 20260109}},    # 数値型での比較
-            {"recieved_at": {"$lte": 20260108}},   # 20260108以下
+            {"recieved_at": {"$lt": DELETE_BEFORE_DATE}},    # 数値型での比較
+            {"recieved_at": {"$lte": DELETE_BEFORE_DATE - 1}},   # DELETE_BEFORE_DATE-1以下
         ]
         
         # 削除対象のデータを検索して件数を確認
@@ -57,7 +60,7 @@ def safe_delete_old_data():
             
             for doc, score in old_docs:
                 recieved_at = doc.metadata.get('recieved_at')
-                if recieved_at and isinstance(recieved_at, (int, float)) and int(recieved_at) < 20260109:
+                if recieved_at and isinstance(recieved_at, (int, float)) and int(recieved_at) < DELETE_BEFORE_DATE:
                     delete_count += 1
             
             print(f"📊 データ件数確認結果:")
