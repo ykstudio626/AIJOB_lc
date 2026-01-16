@@ -368,25 +368,28 @@ def matching_yoin_flow(query: str, anken: str):
 """.strip()
     
     # Initialize Pinecone vector store
-    vectorstore = PineconeVectorStore(
+    vectorstore = PineconeVectorStore.from_existing_index(
         index_name="yoin2",
         embedding=get_embeddings(),
-        pinecone_api_key=PINECONE_API_KEY
+        pinecone_api_key=PINECONE_API_KEY,
+        host=PINECONE_INDEX_HOST
     )
     
     # Search similar vectors
     docs = vectorstore.similarity_search_with_score(search_text, k=15)
     
+    print(f"Found {len(docs)} candidates from Pinecone search")
+    
     # Format results for LLM
     matches_text = ""
     if docs:
-        for doc, score in docs:
-            print("debug")
-            print(doc.page_content)
+        for i, (doc, score) in enumerate(docs):
+            print(f"Candidate {i+1}: ID={doc.metadata.get('id', 'N/A')}, Date={doc.metadata.get('受信日時', 'N/A')}, Score={score}")
             matches_text += f"""
-■ 要員ID: {doc.id}
+■ 要員ID: {doc.metadata.get('id', 'N/A')}
 スコア: {score}
 {doc.page_content}
+メタデータ: {doc.metadata}
 -------------------------
 """.strip() + "\n"
     else:

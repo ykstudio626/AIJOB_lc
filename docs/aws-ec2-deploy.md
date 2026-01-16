@@ -13,8 +13,9 @@
 8. [cronジョブの設定（定期実行）](#cronジョブの設定定期実行)
 9. [Nginxの設定（オプション）](#nginxの設定オプション)
 10. [SSL証明書の設定（オプション）](#ssl証明書の設定オプション)
-11. [動作確認](#動作確認)
-12. [トラブルシューティング](#トラブルシューティング)
+11. [セキュリティ対策](#セキュリティ対策)
+12. [動作確認](#動作確認)
+13. [トラブルシューティング](#トラブルシューティング)
 
 ---
 
@@ -320,10 +321,10 @@ sudo systemctl stop job-matching-api
 sudo systemctl restart job-matching-api
 
 # ログの確認
-  sudo journalctl -u job-matching-api -f
+sudo journalctl -u job-matching-api -f
 
 # 直近のログを確認
-sudo journalctl -u job-matching-api --since "1 hour ago"
+sudo journalctl -u job-matching-api --since "12 hour ago"
 ```
 
 ---
@@ -457,6 +458,67 @@ sudo chmod +x /opt/job-matching-api/scripts/daily_format_yoin.sh
 sudo chown ubuntu:ubuntu /opt/job-matching-api/scripts/daily_format_yoin.sh
 ```
 
+#### 要員データ自動構造化+インデックス登録スクリプト（推奨）
+```bash
+sudo tee /opt/job-matching-api/scripts/daily_format_yoin_with_index.sh << 'EOF'
+#!/bin/bash
+
+# 環境変数の設定
+export PATH="/usr/local/bin:/usr/bin:/bin"
+export LANG="en_US.UTF-8"
+
+# 日付計算（前日の日付を取得）
+YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+
+# ログファイルの設定
+LOG_DIR="/opt/job-matching-api/logs"
+LOG_FILE="${LOG_DIR}/daily_format_yoin_$(date +%Y%m%d).log"
+
+# ログディレクトリの作成
+mkdir -p "$LOG_DIR"
+
+# ログ開始
+echo "===========================================" >> "$LOG_FILE"
+echo "Daily format_yoin (with index) job started at $(date)" >> "$LOG_FILE"
+echo "Processing date: $YESTERDAY" >> "$LOG_FILE"
+echo "Current user: $(whoami)" >> "$LOG_FILE"
+echo "Current directory: $(pwd)" >> "$LOG_FILE"
+echo "===========================================" >> "$LOG_FILE"
+
+# プロジェクトディレクトリに移動
+cd /opt/job-matching-api/app
+
+# 仮想環境をアクティベート
+source /opt/job-matching-api/venv/bin/activate
+
+# Python環境の確認
+echo "Python version: $(python --version)" >> "$LOG_FILE"
+echo "Virtual environment: $VIRTUAL_ENV" >> "$LOG_FILE"
+
+# 要員構造化フロー（with_index=true）を実行
+echo "Executing: python job_matching_flow.py format_yoin start_date=$YESTERDAY end_date=$YESTERDAY limit=1000 with_index=true" >> "$LOG_FILE"
+
+python job_matching_flow.py format_yoin start_date="$YESTERDAY" end_date="$YESTERDAY" limit=1000 with_index=true >> "$LOG_FILE" 2>&1
+
+# 実行結果のチェック
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "SUCCESS: Daily format_yoin (with index) job completed successfully at $(date)" >> "$LOG_FILE"
+else
+    echo "ERROR: Daily format_yoin (with index) job failed with exit code $EXIT_CODE at $(date)" >> "$LOG_FILE"
+fi
+
+echo "===========================================" >> "$LOG_FILE"
+echo "" >> "$LOG_FILE"
+
+# 古いログファイルの削除（30日以上古いもの）
+find "$LOG_DIR" -name "daily_format_yoin_*.log" -mtime +30 -delete
+EOF
+
+sudo chmod +x /opt/job-matching-api/scripts/daily_format_yoin_with_index.sh
+sudo chown ubuntu:ubuntu /opt/job-matching-api/scripts/daily_format_yoin_with_index.sh
+```
+
 ### Step 2: スクリプトのテスト実行
 ```bash
 # 案件データ構造化スクリプトのテスト
@@ -476,8 +538,11 @@ sudo -u ubuntu crontab -e
 # 毎朝4:30に前日分の案件データを構造化
 30 4 * * * /opt/job-matching-api/scripts/daily_format_anken.sh
 
-# 毎朝5:00に前日分の要員データを構造化（オプション）
-0 5 * * * /opt/job-matching-api/scripts/daily_format_yoin.sh
+# 毎朝5:30に前日分の要員データを構造化+インデックス登録（推奨）
+30 5 * * * /opt/job-matching-api/scripts/daily_format_yoin_with_index.sh
+
+# または、要員データの構造化のみの場合
+# 30 5 * * * /opt/job-matching-api/scripts/daily_format_yoin.sh
 
 # 月曜日の朝6:00にインデックス更新（週1回、オプション）
 # 0 6 * * 1 /opt/job-matching-api/scripts/weekly_index_update.sh
@@ -636,6 +701,356 @@ sudo certbot renew --dry-run
 
 ---
 
+## セキュリティ対策
+
+### 11.1 セキュリティグループの厳格化
+
+EC2インスタンスへの不要なアクセスを防ぐため、セキュリティグループルールを最小限に制限します。
+
+```bash
+# 現在のセキュリティグループルールを確認
+aws ec2 describe-security-groups --group-ids sg-xxxxx
+
+# 不要なポートへのアクセスを削除（例：8000番ポートの全開放を削除）
+aws ec2 revoke-security-group-ingress \
+    --group-id sg-xxxxx \
+    --protocol tcp \
+    --port 8000 \
+    --cidr 0.0.0.0/0
+
+# 必要最小限のアクセスのみ許可
+# SSH (22) - 管理者IPのみ
+aws ec2 authorize-security-group-ingress \
+    --group-id sg-xxxxx \
+    --protocol tcp \
+    --port 22 \
+    --cidr YOUR_IP/32
+
+# HTTP/HTTPS (80/443) - Nginx経由でのみアクセス
+aws ec2 authorize-security-group-ingress \
+    --group-id sg-xxxxx \
+    --protocol tcp \
+    --port 80 \
+    --cidr 0.0.0.0/0
+
+aws ec2 authorize-security-group-ingress \
+    --group-id sg-xxxxx \
+    --protocol tcp \
+    --port 443 \
+    --cidr 0.0.0.0/0
+```
+
+### 11.2 Fail2Banの導入
+
+不審なアクセスパターンを検知し、自動的にIPをブロックします。
+
+```bash
+# Fail2Banのインストール
+sudo apt update
+sudo apt install fail2ban -y
+
+# 設定ファイルの作成
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+
+# カスタム設定
+sudo tee /etc/fail2ban/jail.d/custom.conf <<EOF
+[DEFAULT]
+# デフォルト設定
+bantime = 3600
+findtime = 600
+maxretry = 5
+
+# SSH攻撃対策
+[sshd]
+enabled = true
+port = 22
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 7200
+
+# Nginx アクセスログ監視
+[nginx-req-limit]
+enabled = true
+filter = nginx-req-limit
+action = iptables-multiport[name=ReqLimit, port="http,https", protocol=tcp]
+logpath = /var/log/nginx/access.log
+findtime = 600
+bantime = 7200
+maxretry = 10
+
+# 404エラー大量発生対策
+[nginx-noscript]
+enabled = true
+port = http,https
+filter = nginx-noscript
+logpath = /var/log/nginx/access.log
+maxretry = 6
+bantime = 86400
+
+EOF
+
+# カスタムフィルターの作成
+sudo tee /etc/fail2ban/filter.d/nginx-req-limit.conf <<EOF
+[Definition]
+failregex = ^<HOST> -.*"(GET|POST).*" (404|444) .*$
+ignoreregex =
+EOF
+
+sudo tee /etc/fail2ban/filter.d/nginx-noscript.conf <<EOF
+[Definition]
+failregex = ^<HOST> -.*GET.*(\\.(php|asp|exe|pl|cgi|scgi)).*HTTP.*" (404|444) .*$
+ignoreregex =
+EOF
+
+# Fail2Banの起動と有効化
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+
+# 状態確認
+sudo fail2ban-client status
+sudo fail2ban-client status sshd
+```
+
+### 11.3 Nginxセキュリティ設定強化
+
+Nginxの設定を強化し、DDoS攻撃や不正アクセスを軽減します。
+
+```nginx
+# /etc/nginx/sites-available/job-matching-api
+server {
+    listen 80;
+    server_name your-domain.com;
+    
+    # セキュリティヘッダー
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    
+    # サーバー情報の隠蔽
+    server_tokens off;
+    
+    # レート制限
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
+    
+    # 大きなリクエストボディの制限
+    client_max_body_size 1M;
+    
+    # 不正なUser-Agentのブロック
+    if ($http_user_agent ~* (nmap|nikto|wikto|sf|sqlmap|bsqlbf|w3af|acunetix|havij|appscan)) {
+        return 444;
+    }
+    
+    # 管理者パスやAPIエンドポイントへの攻撃対策
+    location ~ /(admin|wp-admin|phpmyadmin|adminer|manager|console) {
+        return 444;
+    }
+    
+    # APIエンドポイントにレート制限適用
+    location /api/ {
+        limit_req zone=api burst=20 nodelay;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    # その他のリクエスト
+    location / {
+        limit_req zone=api burst=5 nodelay;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### 11.4 システムアップデートとパッチ管理
+
+```bash
+# 自動アップデートの設定
+sudo apt install unattended-upgrades apt-listchanges -y
+
+# 設定ファイルの編集
+sudo dpkg-reconfigure -plow unattended-upgrades
+
+# 手動でのアップデート確認（定期実行推奨）
+sudo apt update && sudo apt list --upgradable
+
+# セキュリティアップデートのみ適用
+sudo unattended-upgrade --dry-run
+sudo unattended-upgrade
+```
+
+### 11.5 ログ監視とアラート
+
+```bash
+# ログローテーションの設定
+sudo tee /etc/logrotate.d/job-matching-api <<EOF
+/opt/job-matching-api/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    copytruncate
+    create 644 ubuntu ubuntu
+}
+EOF
+
+# 不審なアクセスパターンの監視スクリプト
+sudo tee /opt/job-matching-api/scripts/security_monitor.sh <<'EOF'
+#!/bin/bash
+
+# ログファイルパス
+NGINX_LOG="/var/log/nginx/access.log"
+APP_LOG="/opt/job-matching-api/logs/uvicorn.log"
+SECURITY_LOG="/opt/job-matching-api/logs/security.log"
+
+# 閾値設定
+IP_REQUEST_THRESHOLD=100
+ERROR_THRESHOLD=50
+
+# 過去1時間のアクセス統計
+echo "[$(date)] Security monitoring started" >> $SECURITY_LOG
+
+# 1時間あたりのリクエスト数が多いIPを検出
+awk -v threshold=$IP_REQUEST_THRESHOLD '
+  $4 > (systime() - 3600) {
+    ip_count[$1]++
+  }
+  END {
+    for (ip in ip_count) {
+      if (ip_count[ip] > threshold) {
+        print "[ALERT] High request volume from IP:", ip, "Requests:", ip_count[ip]
+      }
+    }
+  }' $NGINX_LOG >> $SECURITY_LOG
+
+# 404エラーが多いIPを検出
+awk -v threshold=$ERROR_THRESHOLD '
+  $9 == "404" && $4 > (systime() - 3600) {
+    error_count[$1]++
+  }
+  END {
+    for (ip in error_count) {
+      if (error_count[ip] > threshold) {
+        print "[ALERT] High 404 error rate from IP:", ip, "Errors:", error_count[ip]
+      }
+    }
+  }' $NGINX_LOG >> $SECURITY_LOG
+
+# 攻撃パターンの検出
+grep -E "(sql|union|select|script|alert|eval|exec)" $NGINX_LOG | tail -n 10 >> $SECURITY_LOG
+
+echo "[$(date)] Security monitoring completed" >> $SECURITY_LOG
+EOF
+
+chmod +x /opt/job-matching-api/scripts/security_monitor.sh
+
+# cronに追加（1時間毎実行）
+echo "0 * * * * /opt/job-matching-api/scripts/security_monitor.sh" | sudo crontab -
+```
+
+### 11.6 バックアップとリカバリ
+
+```bash
+# アプリケーションとログのバックアップスクリプト
+sudo tee /opt/job-matching-api/scripts/backup.sh <<'EOF'
+#!/bin/bash
+
+BACKUP_DIR="/opt/backups/job-matching-api"
+DATE=$(date +%Y%m%d_%H%M%S)
+APP_DIR="/opt/job-matching-api"
+
+# バックアップディレクトリ作成
+sudo mkdir -p $BACKUP_DIR
+
+# アプリケーションファイルのバックアップ
+echo "Creating application backup..."
+sudo tar -czf $BACKUP_DIR/app_backup_$DATE.tar.gz \
+    --exclude="$APP_DIR/logs/*" \
+    --exclude="$APP_DIR/.git" \
+    --exclude="$APP_DIR/__pycache__" \
+    $APP_DIR
+
+# ログファイルのバックアップ（過去7日分）
+echo "Creating log backup..."
+sudo tar -czf $BACKUP_DIR/logs_backup_$DATE.tar.gz \
+    $APP_DIR/logs/*.log
+
+# 古いバックアップの削除（30日以上前）
+echo "Cleaning old backups..."
+sudo find $BACKUP_DIR -name "*.tar.gz" -mtime +30 -delete
+
+echo "Backup completed: $BACKUP_DIR"
+EOF
+
+chmod +x /opt/job-matching-api/scripts/backup.sh
+
+# 毎日午前2時にバックアップ実行
+echo "0 2 * * * /opt/job-matching-api/scripts/backup.sh" | sudo crontab -
+```
+
+### 11.7 セキュリティ監査チェックリスト
+
+#### 日次確認項目
+- [ ] Fail2Banの状態確認: `sudo fail2ban-client status`
+- [ ] 不審なログイン試行の確認: `sudo grep "Failed password" /var/log/auth.log | tail -20`
+- [ ] システムリソースの確認: `top`, `df -h`, `free -m`
+- [ ] アプリケーションサービスの状態: `sudo systemctl status job-matching-api`
+
+#### 週次確認項目
+- [ ] セキュリティアップデートの確認と適用
+- [ ] ログファイルのローテーション確認
+- [ ] バックアップファイルの整合性確認
+- [ ] 新しい脆弱性情報の確認
+
+#### 月次確認項目
+- [ ] セキュリティグループルールの見直し
+- [ ] 不要なポートやサービスの確認
+- [ ] SSL証明書の有効期限確認
+- [ ] アクセスログの分析と異常検知
+
+### 11.8 インシデント対応手順
+
+#### 不正アクセス検知時の対応
+
+1. **即座の対応**
+   ```bash
+   # 該当IPの即座ブロック
+   sudo iptables -I INPUT -s SUSPICIOUS_IP -j DROP
+   
+   # Fail2Banでの永続的ブロック
+   sudo fail2ban-client set sshd banip SUSPICIOUS_IP
+   ```
+
+2. **ログ分析**
+   ```bash
+   # アクセスパターンの分析
+   grep SUSPICIOUS_IP /var/log/nginx/access.log
+   grep SUSPICIOUS_IP /var/log/auth.log
+   grep SUSPICIOUS_IP /opt/job-matching-api/logs/uvicorn.log
+   ```
+
+3. **被害範囲の調査**
+   - データベースへの不正アクセス確認
+   - ファイルシステムの改ざん確認
+   - 機密情報の漏洩確認
+
+4. **報告と記録**
+   - インシデントログの作成
+   - 関係者への報告
+   - 対策の実施記録
+
+---
+
 ## 動作確認
 
 ### ヘルスチェック
@@ -734,3 +1149,4 @@ echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 |------|------|
 | 2026-01-01 | 初版作成 |
 | 2026-01-12 | cronジョブの設定セクション追加 |
+| 2026-01-14 | セキュリティ対策セクション追加 |
