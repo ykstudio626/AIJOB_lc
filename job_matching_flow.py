@@ -351,7 +351,7 @@ def index_yoin_flow(params: Dict[str, Any]):
     print("index_yoin flow completed.")
 
 # 要員マッチフロー
-def matching_yoin_flow(query: str, anken: str):
+def matching_yoin_flow(anken: str):
     """要員マッチフロー"""
     print("Starting matching_yoin flow...")
     
@@ -431,7 +431,7 @@ def main(action: str, **kwargs):
     elif action == "index_yoin":
         index_yoin_flow(params)
     elif action == "matching_yoin":
-        matching_yoin_flow(kwargs.get("query", ""), kwargs.get("anken", ""))
+        matching_yoin_flow(kwargs.get("anken", ""))
     else:
         print(f"Unknown action: {action}")
 
