@@ -100,23 +100,47 @@ async def api_matching_yoin_raw(request_data: dict):
     try:
         print(f"*******************Raw request: {request_data}")
         
+        # userInputフィールドから実際のJSONを取得
+        if "userInput" in request_data:
+            import json
+            user_input = json.loads(request_data["userInput"])
+            print(f"*******************Parsed userInput: {user_input}")
+        else:
+            user_input = request_data
+        
         # Extract data from nested structure
-        if "inputs" in request_data:
-            inputs = request_data["inputs"]
+        if "inputs" in user_input:
+            inputs = user_input["inputs"]
             anken = inputs.get("anken", "")
             mode = inputs.get("mode", None)
         else:
-            anken = request_data.get("anken", "")
-            mode = request_data.get("mode", None)
+            anken = user_input.get("anken", "")
+            mode = user_input.get("mode", None)
         
         print(f"*******************Extracted anken: {anken}")
         print(f"*******************Extracted mode: {mode}")
         
         from job_matching_flow import matching_yoin_flow
         result = matching_yoin_flow(anken, mode)
+        
+        # quickモードの場合は異なる形式で返す
+        if mode == "quick":
+            # Document オブジェクトを辞書に変換
+            formatted_result = []
+            for doc, score in result:
+                formatted_result.append({
+                    "id": doc.id,
+                    "content": doc.page_content,
+                    "score": float(score),
+                    "metadata": doc.metadata
+                })
+            return {"status": "success", "result": {"quick_results": formatted_result}}
+        
         return {"status": "success", "result": result}
     except Exception as e:
         print(f"*******************Error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health", response_model=HealthResponse)
