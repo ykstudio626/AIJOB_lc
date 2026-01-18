@@ -71,7 +71,7 @@ async def api_matching_yoin(request: MatchingRequest):
     """要員マッチングAPI"""
     try:
         from job_matching_flow import matching_yoin_flow
-        result = matching_yoin_flow(request.anken, request.mode)
+        result = matching_yoin_flow(request.inputs.anken, request.inputs.mode)
         return {"status": "success", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
