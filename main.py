@@ -66,7 +66,7 @@ async def api_index_yoin(params: WorkflowParams = Body(default=None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/matching_yoin", response_model=MatchingResponse)
+@app.post("/matching_yoin")  # response_modelを削除
 async def api_matching_yoin(request: MatchingRequest):
     """要員マッチングAPI"""
     try:
@@ -75,6 +75,20 @@ async def api_matching_yoin(request: MatchingRequest):
         print(f"*******************mode: {request.inputs.mode}")
         from job_matching_flow import matching_yoin_flow
         result = matching_yoin_flow(request.inputs.anken, request.inputs.mode)
+        
+        # quickモードの場合は異なる形式で返す
+        if request.inputs.mode == "quick":
+            # Document オブジェクトを辞書に変換
+            formatted_result = []
+            for doc, score in result:
+                formatted_result.append({
+                    "id": doc.id,
+                    "content": doc.page_content,
+                    "score": float(score),
+                    "metadata": doc.metadata
+                })
+            return {"status": "success", "result": {"quick_results": formatted_result}}
+        
         return {"status": "success", "result": result}
     except Exception as e:
         print(f"*******************Error: {e}")
