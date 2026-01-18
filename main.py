@@ -70,10 +70,39 @@ async def api_index_yoin(params: WorkflowParams = Body(default=None)):
 async def api_matching_yoin(request: MatchingRequest):
     """要員マッチングAPI"""
     try:
+        print(f"*******************Received request: {request}")
+        print(f"*******************inputs: {request.inputs}")
+        print(f"*******************mode: {request.inputs.mode}")
         from job_matching_flow import matching_yoin_flow
         result = matching_yoin_flow(request.inputs.anken, request.inputs.mode)
         return {"status": "success", "result": result}
     except Exception as e:
+        print(f"*******************Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/matching_yoin_raw")
+async def api_matching_yoin_raw(request_data: dict):
+    """要員マッチングAPI (Raw JSON対応)"""
+    try:
+        print(f"*******************Raw request: {request_data}")
+        
+        # Extract data from nested structure
+        if "inputs" in request_data:
+            inputs = request_data["inputs"]
+            anken = inputs.get("anken", "")
+            mode = inputs.get("mode", None)
+        else:
+            anken = request_data.get("anken", "")
+            mode = request_data.get("mode", None)
+        
+        print(f"*******************Extracted anken: {anken}")
+        print(f"*******************Extracted mode: {mode}")
+        
+        from job_matching_flow import matching_yoin_flow
+        result = matching_yoin_flow(anken, mode)
+        return {"status": "success", "result": result}
+    except Exception as e:
+        print(f"*******************Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health", response_model=HealthResponse)
