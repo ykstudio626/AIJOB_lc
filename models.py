@@ -10,6 +10,7 @@ class WorkflowParams(BaseModel):
 
 class MatchingRequest(BaseModel):
     anken: str
+    mode: Optional[str] = None
 
 class SuccessResponse(BaseModel):
     status: str

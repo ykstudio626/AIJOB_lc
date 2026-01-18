@@ -351,7 +351,7 @@ def index_yoin_flow(params: Dict[str, Any]):
     print("index_yoin flow completed.")
 
 # 要員マッチフロー
-def matching_yoin_flow(anken: str):
+def matching_yoin_flow(anken: str, mode: str = None):
     """要員マッチフロー"""
     print("Starting matching_yoin flow...")
     
@@ -397,6 +397,9 @@ def matching_yoin_flow(anken: str):
 """.strip() + "\n"
     else:
         matches_text = "検索結果がありませんでした。"
+
+    if(mode == "quick"):
+        return docs
     
     # LLM matching
     prompt = PromptTemplate.from_template(MATCHING_PROMPT)
