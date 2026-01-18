@@ -434,7 +434,7 @@ def main(action: str, **kwargs):
     elif action == "index_yoin":
         index_yoin_flow(params)
     elif action == "matching_yoin":
-        matching_yoin_flow(params)
+        matching_yoin_flow(kwargs.get("anken", ""), kwargs.get("mode", ""))
     else:
         print(f"Unknown action: {action}")
 
