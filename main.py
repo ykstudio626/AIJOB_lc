@@ -1,20 +1,16 @@
 # FastAPIアプリのエントリーポイント
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
 import uvicorn
 
-# Pydantic models for API requests
-class WorkflowParams(BaseModel):
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    limit: Optional[int] = None
-    offset: Optional[int] = None
-
-class MatchingRequest(BaseModel):
-    query: str
-    anken: str
+# Import Pydantic models
+from models import (
+    WorkflowParams, 
+    MatchingRequest, 
+    SuccessResponse, 
+    MatchingResponse, 
+    HealthResponse
+)
 
 app = FastAPI(
     title="Job Matching API",
@@ -31,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/format_yoin")
+@app.post("/format_yoin", response_model=SuccessResponse)
 async def api_format_yoin(params: WorkflowParams = Body(default=None)):
     """要員データ構造化API"""
     try:
@@ -44,7 +40,7 @@ async def api_format_yoin(params: WorkflowParams = Body(default=None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/format_anken")
+@app.post("/format_anken", response_model=SuccessResponse)
 async def api_format_anken(params: WorkflowParams = Body(default=None)):
     """案件データ構造化API"""
     try:
@@ -57,7 +53,7 @@ async def api_format_anken(params: WorkflowParams = Body(default=None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/index_yoin")
+@app.post("/index_yoin", response_model=SuccessResponse)
 async def api_index_yoin(params: WorkflowParams = Body(default=None)):
     """要員データRAG登録API"""
     try:
@@ -70,17 +66,17 @@ async def api_index_yoin(params: WorkflowParams = Body(default=None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/matching_yoin")
+@app.post("/matching_yoin", response_model=MatchingResponse)
 async def api_matching_yoin(request: MatchingRequest):
     """要員マッチングAPI"""
     try:
         from job_matching_flow import matching_yoin_flow
-        result = matching_yoin_flow(request.query, request.anken)
+        result = matching_yoin_flow(request.anken)
         return {"status": "success", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 async def health_check():
     """ヘルスチェックエンドポイント"""
     return {"status": "healthy"}

@@ -1076,8 +1076,7 @@ curl http://<YOUR_EC2_PUBLIC_IP>/health
 curl -X POST "http://<YOUR_EC2_PUBLIC_IP>:8000/matching_yoin" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "Python開発者",
-    "anken": "{\"案件名\": \"Webアプリ開発\", \"必須スキル\": \"Python\", \"作業場所\": \"東京\", \"単価\": \"5000円\", \"備考\": \"経験3年以上\"}"
+    "anken": "{\"案件名\": \"Webアプリ開発\", \"必須スキル\": \"Python\", \"重点キーワード\": \"Python, Django, React\", \"作業場所\": \"東京\", \"単価\": \"5000円\", \"備考\": \"経験3年以上\"}"
   }'
 ```
 
@@ -1085,15 +1084,74 @@ curl -X POST "http://<YOUR_EC2_PUBLIC_IP>:8000/matching_yoin" \
 
 ## トラブルシューティング
 
-### サービスが起動しない場合
+### APIが500エラーを返す場合
 ```bash
-# ログの確認
-sudo journalctl -u job-matching-api -n 50
+# 1. アプリケーションログの詳細確認
+sudo journalctl -u job-matching-api -f --lines=100
 
-# 手動で起動してエラーを確認
+# 2. 環境変数の問題をチェック
 cd /opt/job-matching-api/app
+sudo -u ubuntu -E env | grep -E "(OPENAI|PINECONE)"
+
+# 3. .envファイルの権限とパス確認
+ls -la .env
+sudo systemctl show job-matching-api | grep Environment
+
+# 4. Pythonパッケージの依存関係確認
 source ../venv/bin/activate
-uvicorn main:app --host 0.0.0.0 --port 8000
+pip list | grep -E "(openai|pinecone|langchain)"
+
+# 5. 手動でAPIテスト
+python -c "
+import os
+from dotenv import load_dotenv
+load_dotenv()
+print('OPENAI_API_KEY:', bool(os.getenv('OPENAI_API_KEY')))
+print('PINECONE_API_KEY:', bool(os.getenv('PINECONE_API_KEY')))
+"
+
+# 6. systemdサービスの環境確認
+sudo systemd-run --uid=ubuntu --gid=ubuntu --setenv=PATH=/opt/job-matching-api/venv/bin \
+  bash -c 'cd /opt/job-matching-api/app && python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv(\"OPENAI_API_KEY\")[:20] if os.getenv(\"OPENAI_API_KEY\") else \"Not found\")"'
+```
+
+### 一般的な原因
+1. **環境変数の読み込み失敗**: systemdサービスで.envが正しく読まれていない
+2. **パッケージのバージョン不一致**: 手動実行とサービス実行で異なる環境
+3. **権限問題**: ファイルアクセス権限の問題
+4. **ワーキングディレクトリ**: 相対パスの問題
+
+### 対策
+```bash
+# systemdサービスファイルを修正
+sudo tee /etc/systemd/system/job-matching-api.service << 'EOF'
+[Unit]
+Description=Job Matching API Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/job-matching-api/app
+Environment="PATH=/opt/job-matching-api/venv/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=/opt/job-matching-api/app/.env
+ExecStart=/opt/job-matching-api/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level debug
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# サービスを再起動
+sudo systemctl daemon-reload
+sudo systemctl restart job-matching-api
+
+# ログで詳細なエラーを確認
+sudo journalctl -u job-matching-api -f
 ```
 
 ### ポートがブロックされている場合
