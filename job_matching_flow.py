@@ -381,7 +381,7 @@ def matching_yoin_flow(anken: str):
     )
     
     # Search similar vectors
-    docs = vectorstore.similarity_search_with_score(search_text, k=15)
+    docs = vectorstore.similarity_search_with_score(search_text, k=20)
     
     # Format results for LLM
     matches_text = ""
