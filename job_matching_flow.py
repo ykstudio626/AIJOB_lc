@@ -391,7 +391,15 @@ async def matching_yoin_flow_stream(anken: str, mode: str = None):
     # Search similar vectors
     docs = vectorstore.similarity_search_with_score(search_text, k=20)
     
-    yield {"type": "search_complete", "message": f"{len(docs)}件の候補を発見", "count": len(docs)}
+    # 見つかった要員のIDリストを作成
+    found_yoin_ids = [doc.id for doc, score in docs]
+    
+    yield {
+        "type": "search_complete", 
+        "message": f"{len(docs)}件の候補を発見", 
+        "count": len(docs),
+        "yoin_ids": found_yoin_ids
+    }
     await asyncio.sleep(0.1)
     
     # quickモードの場合は検索結果のみ返す
