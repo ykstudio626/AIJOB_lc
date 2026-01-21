@@ -570,6 +570,17 @@ def main(action: str, **kwargs):
         index_yoin_flow(params)
     elif action == "matching_yoin":
         matching_yoin_flow(kwargs.get("anken", ""))
+    elif action == "matching_yoin_stream":
+        # ストリーミング版の実行（asyncio対応）
+        import asyncio
+        async def run_stream():
+            async for chunk in matching_yoin_flow_stream(
+                kwargs.get("anken", ""), 
+                kwargs.get("mode", None)
+            ):
+                print(f"Stream chunk: {chunk}")
+        
+        asyncio.run(run_stream())
     else:
         print(f"Unknown action: {action}")
 
@@ -577,6 +588,7 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
         print("Usage: python job_matching_flow.py <action> [kwargs...]")
+        print("Actions: format_yoin, format_anken, index_yoin, matching_yoin, matching_yoin_stream")
         sys.exit(1)
     
     action = sys.argv[1]
