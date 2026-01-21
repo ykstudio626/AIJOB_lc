@@ -350,6 +350,144 @@ def index_yoin_flow(params: Dict[str, Any]):
     
     print("index_yoin flow completed.")
 
+# 要員マッチフロー（ストリーミング対応）
+async def matching_yoin_flow_stream(anken: str, mode: str = None):
+    """要員マッチフロー（ストリーミング対応）"""
+    import asyncio
+    
+    yield {"type": "status", "message": "案件データを解析中..."}
+    await asyncio.sleep(0.1)  # 非同期処理のため少し待機
+    
+    # Parse anken data
+    anken_data = json.loads(anken)
+    
+    yield {"type": "status", "message": "検索クエリを作成中..."}
+    await asyncio.sleep(0.1)
+    
+    # Create search text with weighted keywords
+    重点キーワード = anken_data.get('重点キーワード', '')
+    
+    search_text = f"""
+【最重要スキル】: {重点キーワード}
+案件名: {anken_data.get('案件名', '')}
+求めるスキル: {重点キーワード}
+必須スキル: {anken_data.get('必須スキル', '')}
+作業場所: {anken_data.get('作業場所', '')}
+単価: {anken_data.get('単価', '')}
+備考: {anken_data.get('備考', '')}
+優先技術: {重点キーワード}
+""".strip()
+    
+    yield {"type": "status", "message": "データベースから要員を検索中..."}
+    await asyncio.sleep(0.1)
+    
+    # Initialize Pinecone vector store
+    vectorstore = PineconeVectorStore(
+        index_name="yoin2",
+        embedding=get_embeddings(),
+        pinecone_api_key=PINECONE_API_KEY
+    )
+    
+    # Search similar vectors
+    docs = vectorstore.similarity_search_with_score(search_text, k=20)
+    
+    yield {"type": "search_complete", "message": f"{len(docs)}件の候補を発見", "count": len(docs)}
+    await asyncio.sleep(0.1)
+    
+    # quickモードの場合は検索結果のみ返す
+    if mode == "quick":
+        formatted_results = []
+        for i, (doc, score) in enumerate(docs):
+            formatted_results.append({
+                "id": doc.id,
+                "content": doc.page_content,
+                "score": float(score),
+                "metadata": doc.metadata
+            })
+            yield {
+                "type": "quick_result",
+                "index": i + 1,
+                "total": len(docs),
+                "result": formatted_results[-1]
+            }
+            await asyncio.sleep(0.05)  # 少し間隔を空けて送信
+        
+        yield {
+            "type": "final_result",
+            "message": "検索完了",
+            "results": {"quick_results": formatted_results}
+        }
+        return
+    
+    # 通常モード: LLMでのマッチング分析
+    yield {"type": "status", "message": "AI分析を開始中..."}
+    await asyncio.sleep(0.1)
+    
+    # Format results for LLM
+    matches_text = ""
+    if docs:
+        for doc, score in docs:
+            matches_text += f"""
+■ 要員ID: {doc.id}
+スコア: {score}
+{doc.page_content}
+-------------------------
+""".strip() + "\n"
+    else:
+        matches_text = "検索結果がありませんでした。"
+    
+    yield {"type": "status", "message": "マッチング分析中..."}
+    await asyncio.sleep(0.1)
+    
+    # LLM matching with streaming
+    prompt = PromptTemplate.from_template(MATCHING_PROMPT)
+    
+    # ストリーミング対応のLLMチェーン作成
+    llm_stream = ChatOpenAI(
+        model="gpt-4o-mini", 
+        temperature=0.7, 
+        api_key=OPENAI_API_KEY,
+        streaming=True  # ストリーミングを有効化
+    )
+    
+    chain = prompt | llm_stream
+    
+    # ストリーミングでLLMレスポンスを処理
+    accumulated_response = ""
+    async for chunk in chain.astream({
+        "anken_formatted": json.dumps(anken_data, ensure_ascii=False),
+        "matches_text": matches_text
+    }):
+        if chunk.content:
+            accumulated_response += chunk.content
+            yield {
+                "type": "llm_chunk",
+                "content": chunk.content,
+                "accumulated": accumulated_response
+            }
+    
+    yield {"type": "status", "message": "分析結果を整理中..."}
+    await asyncio.sleep(0.1)
+    
+    # Parse final JSON result
+    try:
+        # JSONパーサーで最終結果を解析
+        from langchain_core.output_parsers import JsonOutputParser
+        parser = JsonOutputParser(pydantic_object=MatchingResult)
+        result = parser.parse(accumulated_response)
+        
+        yield {
+            "type": "final_result",
+            "message": "マッチング分析完了",
+            "result": result
+        }
+    except Exception as e:
+        yield {
+            "type": "error",
+            "message": f"結果の解析に失敗しました: {str(e)}",
+            "raw_response": accumulated_response
+        }
+
 # 要員マッチフロー
 def matching_yoin_flow(anken: str):
     """要員マッチフロー"""

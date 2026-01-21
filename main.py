@@ -1,7 +1,10 @@
 # FastAPIアプリのエントリーポイント
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 import uvicorn
+import json
+import asyncio
 
 # Import Pydantic models
 from models import (
@@ -75,6 +78,92 @@ async def api_matching_yoin(request: MatchingRequest):
         return {"status": "success", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/matching_yoin_stream")
+async def api_matching_yoin_stream(request: MatchingRequest):
+    """要員マッチングAPI（ストリーミング対応）"""
+    async def generate_stream():
+        try:
+            # 初期化メッセージ
+            yield f"data: {json.dumps({'type': 'status', 'message': '検索を開始しています...'}, ensure_ascii=False)}\n\n"
+            
+            from job_matching_flow import matching_yoin_flow_stream
+            
+            # ストリーミング処理を実行
+            async for chunk in matching_yoin_flow_stream(request.inputs.anken, request.inputs.mode):
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+            
+            # 完了メッセージ
+            yield f"data: {json.dumps({'type': 'complete', 'message': 'マッチング処理が完了しました'}, ensure_ascii=False)}\n\n"
+            
+        except Exception as e:
+            # エラーメッセージ
+            error_data = {
+                'type': 'error',
+                'message': f'エラーが発生しました: {str(e)}'
+            }
+            yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
+    
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
+
+@app.post("/matching_yoin_raw_stream")
+async def api_matching_yoin_raw_stream(request_data: dict):
+    """要員マッチングAPI (Raw JSON対応・ストリーミング)"""
+    async def generate_stream():
+        try:
+            # userInputフィールドから実際のJSONを取得
+            if "userInput" in request_data:
+                user_input = json.loads(request_data["userInput"])
+            else:
+                user_input = request_data
+            
+            # Extract data from nested structure
+            if "inputs" in user_input:
+                inputs = user_input["inputs"]
+                anken = inputs.get("anken", "")
+                mode = inputs.get("mode", None)
+            else:
+                anken = user_input.get("anken", "")
+                mode = user_input.get("mode", None)
+            
+            # 初期化メッセージ
+            yield f"data: {json.dumps({'type': 'status', 'message': '検索を開始しています...', 'anken_info': {'案件名': json.loads(anken).get('案件名', '未指定')}, 'mode': mode}, ensure_ascii=False)}\n\n"
+            
+            from job_matching_flow import matching_yoin_flow_stream
+            
+            # ストリーミング処理を実行
+            async for chunk in matching_yoin_flow_stream(anken, mode):
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+            
+            # 完了メッセージ
+            yield f"data: {json.dumps({'type': 'complete', 'message': 'マッチング処理が完了しました'}, ensure_ascii=False)}\n\n"
+            
+        except Exception as e:
+            error_data = {
+                'type': 'error',
+                'message': f'エラーが発生しました: {str(e)}'
+            }
+            yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
+    
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():

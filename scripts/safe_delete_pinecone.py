@@ -13,7 +13,7 @@ from langchain_pinecone import PineconeVectorStore
 load_dotenv()
 
 # 削除対象日付の設定
-DELETE_BEFORE_DATE = 20260110  # この日付より前のデータを削除
+DELETE_BEFORE_DATE = 20260115  # この日付より前のデータを削除
 
 def safe_delete_old_data():
     """安全にデータを確認・削除"""
