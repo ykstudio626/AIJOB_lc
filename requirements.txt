@@ -10,18 +10,18 @@ langchain-aws==1.2.1
 # Vector Database
 langchain-pinecone==0.2.13
 
-# Google AI Studio
-google-genai==1.60.0
+# Google AI Studio - flexible version range
+google-generativeai>=0.8.0,<2.0.0
 
 # Core utilities
-requests==2.32.5
-pydantic==2.12.5
-python-dotenv==1.2.1
-boto3==1.42.33
+requests>=2.32.0,<3.0.0
+pydantic>=2.12.0,<3.0.0
+python-dotenv>=1.0.0,<2.0.0
+boto3>=1.42.0,<2.0.0
 
-# Web API framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+# Web API framework - flexible versions
+fastapi>=0.104.0,<1.0.0
+uvicorn[standard]>=0.24.0,<1.0.0
 
-# Note: This configuration is tested and working for multi-cloud AI providers
-# (OpenAI, Google AI Studio, AWS Bedrock) as of 2026-01-23
+# Note: Using flexible version ranges to allow pip to resolve conflicts
+# EC2 installation with: pip install -r requirements.txt --no-deps && pip install anyio
