@@ -25,13 +25,6 @@ LLM_MODEL = os.getenv("LLM_MODEL")  # モデル名（省略時はデフォルト
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Google AI Studio Gemini API Key
 AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-1")
 
-# 起動時の環境変数デバッグログ
-print(f"🔧 [STARTUP] Environment Variables:")
-print(f"   LLM_PROVIDER: {LLM_PROVIDER}")
-print(f"   LLM_MODEL: {LLM_MODEL}")
-print(f"   GEMINI_API_KEY: {'***' + GEMINI_API_KEY[-4:] if GEMINI_API_KEY else 'None'}")
-print(f"   OPENAI_API_KEY: {'***' + OPENAI_API_KEY[-4:] if OPENAI_API_KEY else 'None'}")
-
 # Initialize LangChain components (遅延初期化)
 llm = None
 embeddings = None
@@ -46,8 +39,6 @@ def get_llm(provider=None):
         current_provider = provider or LLM_PROVIDER
         model_config = get_model_config(current_provider, LLM_MODEL)
         
-        print(f"🚀 [LLM_INIT] Provider: {current_provider}, Model: {model_config['model']}")
-        
         if current_provider == "ai_studio":
             try:
                 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -56,9 +47,9 @@ def get_llm(provider=None):
                     temperature=model_config["temperature"],
                     google_api_key=GEMINI_API_KEY
                 )
-                print(f"✅ [SUCCESS] Using Google AI Studio {model_config['model']}: {model_config['description']}")
+                print(f"Using Google AI Studio {model_config['model']}: {model_config['description']}")
             except ImportError:
-                print("❌ [ERROR] langchain-google-genai not installed. Falling back to OpenAI.")
+                print("Warning: langchain-google-genai not installed. Falling back to OpenAI")
                 current_provider = "openai"
                 model_config = get_model_config("openai", "gpt4o_mini")
         
@@ -70,9 +61,9 @@ def get_llm(provider=None):
                     region_name=model_config.get("region_name", AWS_REGION),
                     model_kwargs={"temperature": model_config["temperature"]}
                 )
-                print(f"✅ [SUCCESS] Using AWS Bedrock {model_config['model_id']}: {model_config['description']}")
+                print(f"Using AWS Bedrock {model_config['model_id']}: {model_config['description']}")
             except ImportError:
-                print("❌ [ERROR] langchain-aws not installed. Falling back to OpenAI.")
+                print("Warning: langchain-aws not installed. Falling back to OpenAI")
                 current_provider = "openai"
                 model_config = get_model_config("openai", "gpt4o_mini")
         
@@ -82,7 +73,7 @@ def get_llm(provider=None):
                 temperature=model_config["temperature"], 
                 api_key=OPENAI_API_KEY
             )
-            print(f"✅ [FALLBACK] Using OpenAI {model_config['model']}: {model_config['description']}")
+            print(f"Using OpenAI {model_config['model']}: {model_config['description']}")
     
     return llm
 
