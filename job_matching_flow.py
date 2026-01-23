@@ -19,15 +19,62 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_HOST = os.getenv("PINECONE_INDEX_HOST")
 
+# LLM設定 - 速度改善のためのマルチプロバイダー対応
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")  # openai, ai_studio, bedrock
+LLM_MODEL = os.getenv("LLM_MODEL")  # モデル名（省略時はデフォルト）
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Google AI Studio Gemini API Key
+AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-1")
+
 # Initialize LangChain components (遅延初期化)
 llm = None
 embeddings = None
 vectorstore = None
 
-def get_llm():
+def get_llm(provider=None):
+    """高速化対応のマルチプロバイダーLLM取得関数"""
     global llm
     if llm is None:
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=OPENAI_API_KEY)
+        from llm_config import get_model_config
+        
+        current_provider = provider or LLM_PROVIDER
+        model_config = get_model_config(current_provider, LLM_MODEL)
+        
+        if current_provider == "ai_studio":
+            try:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                llm = ChatGoogleGenerativeAI(
+                    model=model_config["model"],
+                    temperature=model_config["temperature"],
+                    google_api_key=GEMINI_API_KEY
+                )
+                print(f"Using Google AI Studio {model_config['model']}: {model_config['description']}")
+            except ImportError:
+                print("Warning: langchain-google-genai not installed. Falling back to OpenAI")
+                current_provider = "openai"
+                model_config = get_model_config("openai", "gpt4o_mini")
+        
+        elif current_provider == "bedrock":
+            try:
+                from langchain_aws import ChatBedrock
+                llm = ChatBedrock(
+                    model_id=model_config["model_id"],
+                    region_name=model_config.get("region_name", AWS_REGION),
+                    model_kwargs={"temperature": model_config["temperature"]}
+                )
+                print(f"Using AWS Bedrock {model_config['model_id']}: {model_config['description']}")
+            except ImportError:
+                print("Warning: langchain-aws not installed. Falling back to OpenAI")
+                current_provider = "openai"
+                model_config = get_model_config("openai", "gpt4o_mini")
+        
+        if current_provider == "openai":
+            llm = ChatOpenAI(
+                model=model_config["model"], 
+                temperature=model_config["temperature"], 
+                api_key=OPENAI_API_KEY
+            )
+            print(f"Using OpenAI {model_config['model']}: {model_config['description']}")
+    
     return llm
 
 def get_embeddings():
@@ -398,9 +445,10 @@ def matching_yoin_flow(anken: str):
     else:
         matches_text = "検索結果がありませんでした。"
     
-    # LLM matching
+    # LLM matching - マルチプロバイダー対応
     prompt = PromptTemplate.from_template(MATCHING_PROMPT)
 
+    print(f"debug - Using LLM Provider: {LLM_PROVIDER}, Model: {LLM_MODEL or 'default'}")
     print("debug" + MATCHING_PROMPT)
     
     chain = prompt | get_llm() | JsonOutputParser(pydantic_object=MatchingResult)
@@ -413,6 +461,193 @@ def matching_yoin_flow(anken: str):
     print(json.dumps(result, ensure_ascii=False, indent=2))
     print("matching_yoin flow completed.")
     return result
+
+# 要員マッチフロー（ストリーミング対応・高速化版）
+async def matching_yoin_flow_stream(anken: str, mode: str = None):
+    """要員マッチフロー（ストリーミング対応・マルチプロバイダー対応）"""
+    import asyncio
+    
+    yield {"type": "status", "message": f"案件データを解析中... (Provider: {LLM_PROVIDER}, Model: {LLM_MODEL or 'default'})"}
+    await asyncio.sleep(0.1)
+    
+    # Parse anken data
+    anken_data = json.loads(anken)
+    
+    yield {"type": "status", "message": "検索クエリを作成中..."}
+    await asyncio.sleep(0.1)
+    
+    # Create search text with weighted keywords
+    重点キーワード = anken_data.get('重点キーワード', '')
+    
+    search_text = f"""
+【最重要スキル】: {重点キーワード}
+案件名: {anken_data.get('案件名', '')}
+求めるスキル: {重点キーワード}
+必須スキル: {anken_data.get('必須スキル', '')}
+作業場所: {anken_data.get('作業場所', '')}
+単価: {anken_data.get('単価', '')}
+備考: {anken_data.get('備考', '')}
+優先技術: {重点キーワード}
+""".strip()
+    
+    yield {"type": "status", "message": "データベースから要員を検索中..."}
+    await asyncio.sleep(0.1)
+    
+    # Initialize Pinecone vector store
+    vectorstore = PineconeVectorStore(
+        index_name="yoin2",
+        embedding=get_embeddings(),
+        pinecone_api_key=PINECONE_API_KEY
+    )
+    
+    # Search similar vectors
+    docs = vectorstore.similarity_search_with_score(search_text, k=20)
+    
+    # 見つかった要員のIDリストを作成
+    found_yoin_ids = [doc.id for doc, score in docs]
+    
+    yield {
+        "type": "search_complete", 
+        "message": f"{len(docs)}件の候補を発見", 
+        "count": len(docs),
+        "yoin_ids": found_yoin_ids
+    }
+    await asyncio.sleep(0.1)
+    
+    # quickモードの場合は検索結果のみ返す
+    if mode == "quick":
+        formatted_results = []
+        for i, (doc, score) in enumerate(docs):
+            formatted_results.append({
+                "id": doc.id,
+                "content": doc.page_content,
+                "score": float(score),
+                "metadata": doc.metadata
+            })
+            yield {
+                "type": "quick_result",
+                "index": i + 1,
+                "total": len(docs),
+                "result": formatted_results[-1]
+            }
+            await asyncio.sleep(0.05)
+        
+        yield {
+            "type": "final_result",
+            "message": "検索完了",
+            "results": {"quick_results": formatted_results}
+        }
+        return
+    
+    # 通常モード: LLMでのマッチング分析（高速化対応）
+    yield {"type": "status", "message": f"AI分析を開始中... (Using {LLM_PROVIDER}:{LLM_MODEL or 'default'})"}
+    await asyncio.sleep(0.1)
+    
+    # Format results for LLM
+    matches_text = ""
+    if docs:
+        for doc, score in docs:
+            matches_text += f"""
+■ 要員ID: {doc.id}
+スコア: {score}
+{doc.page_content}
+-------------------------
+""".strip() + "\n"
+    else:
+        matches_text = "検索結果がありませんでした。"
+    
+    yield {"type": "status", "message": "マッチング分析中..."}
+    await asyncio.sleep(0.1)
+    
+    # LLM matching with streaming - マルチプロバイダー対応
+    prompt = PromptTemplate.from_template(MATCHING_PROMPT)
+    
+    # ストリーミング対応のLLM作成（設定ファイルベース）
+    from llm_config import get_model_config
+    model_config = get_model_config(LLM_PROVIDER, LLM_MODEL)
+    
+    if LLM_PROVIDER == "ai_studio":
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            llm_stream = ChatGoogleGenerativeAI(
+                model=model_config["model"],
+                temperature=model_config["temperature"],
+                google_api_key=GEMINI_API_KEY,
+                streaming=True
+            )
+        except ImportError:
+            from langchain_openai import ChatOpenAI
+            fallback_config = get_model_config("openai", "gpt4o_mini")
+            llm_stream = ChatOpenAI(
+                model=fallback_config["model"], 
+                temperature=fallback_config["temperature"], 
+                api_key=OPENAI_API_KEY,
+                streaming=True
+            )
+    elif LLM_PROVIDER == "bedrock":
+        try:
+            from langchain_aws import ChatBedrock
+            llm_stream = ChatBedrock(
+                model_id=model_config["model_id"],
+                region_name=model_config.get("region_name", AWS_REGION),
+                model_kwargs={"temperature": model_config["temperature"]},
+                streaming=True
+            )
+        except ImportError:
+            from langchain_openai import ChatOpenAI
+            fallback_config = get_model_config("openai", "gpt4o_mini")
+            llm_stream = ChatOpenAI(
+                model=fallback_config["model"], 
+                temperature=fallback_config["temperature"], 
+                api_key=OPENAI_API_KEY,
+                streaming=True
+            )
+    else:  # OpenAI
+        from langchain_openai import ChatOpenAI
+        llm_stream = ChatOpenAI(
+            model=model_config["model"], 
+            temperature=model_config["temperature"], 
+            api_key=OPENAI_API_KEY,
+            streaming=True
+        )
+    
+    chain = prompt | llm_stream
+    
+    # ストリーミングでLLMレスポンスを処理
+    accumulated_response = ""
+    async for chunk in chain.astream({
+        "anken_formatted": json.dumps(anken_data, ensure_ascii=False),
+        "matches_text": matches_text
+    }):
+        if chunk.content:
+            accumulated_response += chunk.content
+            yield {
+                "type": "llm_chunk",
+                "content": chunk.content,
+                "accumulated": accumulated_response
+            }
+    
+    yield {"type": "status", "message": "分析結果を整理中..."}
+    await asyncio.sleep(0.1)
+    
+    # Parse final JSON result
+    try:
+        # JSONパーサーで最終結果を解析
+        from langchain_core.output_parsers import JsonOutputParser
+        parser = JsonOutputParser(pydantic_object=MatchingResult)
+        result = parser.parse(accumulated_response)
+        
+        yield {
+            "type": "final_result",
+            "message": "マッチング分析完了",
+            "result": result
+        }
+    except Exception as e:
+        yield {
+            "type": "error",
+            "message": f"結果の解析に失敗しました: {str(e)}",
+            "raw_response": accumulated_response
+        }
 
 def main(action: str, **kwargs):
     """メイン関数"""
@@ -432,6 +667,17 @@ def main(action: str, **kwargs):
         index_yoin_flow(params)
     elif action == "matching_yoin":
         matching_yoin_flow(kwargs.get("anken", ""))
+    elif action == "matching_yoin_stream":
+        # ストリーミング版の実行（asyncio対応）
+        import asyncio
+        async def run_stream():
+            async for chunk in matching_yoin_flow_stream(
+                kwargs.get("anken", ""), 
+                kwargs.get("mode", None)
+            ):
+                print(f"Stream chunk: {chunk}")
+        
+        asyncio.run(run_stream())
     else:
         print(f"Unknown action: {action}")
 
@@ -439,6 +685,7 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
         print("Usage: python job_matching_flow.py <action> [kwargs...]")
+        print("Actions: format_yoin, format_anken, index_yoin, matching_yoin, matching_yoin_stream")
         sys.exit(1)
     
     action = sys.argv[1]

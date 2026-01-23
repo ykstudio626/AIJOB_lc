@@ -1,7 +1,9 @@
 # FastAPIアプリのエントリーポイント
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 import uvicorn
+import json
 
 # Import Pydantic models
 from models import (
@@ -73,6 +75,58 @@ async def api_matching_yoin(request: MatchingRequest):
         from job_matching_flow import matching_yoin_flow
         result = matching_yoin_flow(request.anken)
         return {"status": "success", "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/matching_yoin_stream")
+async def api_matching_yoin_stream(request: MatchingRequest):
+    """要員マッチングAPI（ストリーミング対応・高速化版）"""
+    try:
+        from job_matching_flow import matching_yoin_flow_stream
+        
+        async def generate_stream():
+            async for chunk in matching_yoin_flow_stream(
+                request.anken, 
+                request.inputs.mode if hasattr(request, 'inputs') and request.inputs else None
+            ):
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\\n\\n"
+        
+        return StreamingResponse(
+            generate_stream(), 
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/matching_yoin_raw_stream")
+async def api_matching_yoin_raw_stream(request_data: dict = Body(...)):
+    """要員マッチングAPI（生ストリーミング・高速化版）"""
+    try:
+        from job_matching_flow import matching_yoin_flow_stream
+        
+        async def generate_stream():
+            async for chunk in matching_yoin_flow_stream(
+                request_data.get("anken", ""),
+                request_data.get("mode", None)
+            ):
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\\n\\n"
+        
+        return StreamingResponse(
+            generate_stream(), 
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

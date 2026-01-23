@@ -1,8 +1,27 @@
-langchain
-langchain-openai
-langchain-pinecone
-requests
-pydantic
-python-dotenv
+# Core LangChain packages
+langchain==1.2.6
+langchain-core==1.2.7
+
+# LLM Provider packages
+langchain-openai==1.1.7
+langchain-google-genai==4.2.0
+langchain-aws==1.2.1
+
+# Vector Database
+langchain-pinecone==0.2.13
+
+# Google AI Studio
+google-genai==1.60.0
+
+# Core utilities
+requests==2.32.5
+pydantic==2.12.5
+python-dotenv==1.2.1
+boto3==1.42.33
+
+# Web API framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
+
+# Note: This configuration is tested and working for multi-cloud AI providers
+# (OpenAI, Google AI Studio, AWS Bedrock) as of 2026-01-23
