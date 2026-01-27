@@ -9,6 +9,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 from prompts import MATCHING_PROMPT
+import re
 
 # Load environment variables
 load_dotenv()
@@ -76,6 +77,21 @@ def get_llm(provider=None):
             print(f"Using OpenAI {model_config['model']}: {model_config['description']}")
     
     return llm
+
+def clean_json_response(response_text: str) -> str:
+    """LLMレスポンスからJSONを抽出・クリーンアップする関数"""
+    if not response_text:
+        return ""
+    
+    # マークダウンのJSONコードブロックを除去
+    # ```json と ``` で囲まれている場合
+    json_pattern = r'```(?:json)?\s*(.*?)\s*```'
+    match = re.search(json_pattern, response_text, re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    
+    # マークダウンブロックがない場合は元のテキストを返す
+    return response_text.strip()
 
 def get_embeddings():
     global embeddings
@@ -211,13 +227,15 @@ def structure_yoin_data(raw_text: str, item: Dict) -> Dict:
     
     # JSONパースとPydanticバリデーション
     try:
+        # レスポンスをクリーンアップしてJSONを抽出
+        cleaned_response = clean_json_response(response.content)
         # JSON文字列をパース
-        json_data = json.loads(response.content)
+        json_data = json.loads(cleaned_response)
         # Pydanticモデルを作成
         result = YoinStructured(**json_data)
         return result.model_dump()
     except Exception as e:
-        return {"error": f"Parse failed: {e}", "raw_response": response.content}
+        return {"error": f"Parse failed: {e}", "raw_response": response.content, "cleaned_response": clean_json_response(response.content)}
 
 def structure_anken_data(raw_text: str, item: Dict) -> Dict:
     """案件データを構造化"""
@@ -258,13 +276,15 @@ def structure_anken_data(raw_text: str, item: Dict) -> Dict:
     
     # JSONパースとPydanticバリデーション
     try:
+        # レスポンスをクリーンアップしてJSONを抽出
+        cleaned_response = clean_json_response(response.content)
         # JSON文字列をパース
-        json_data = json.loads(response.content)
+        json_data = json.loads(cleaned_response)
         # Pydanticモデルを作成
         result = AnkenStructured(**json_data)
         return result.model_dump()
     except Exception as e:
-        return {"error": f"Parse failed: {e}", "raw_response": response.content}
+        return {"error": f"Parse failed: {e}", "raw_response": response.content, "cleaned_response": clean_json_response(response.content)}
 
 # 構造化フロー（要員）
 def format_yoin_flow(params: Dict[str, Any]):
