@@ -275,6 +275,252 @@ chmod +x start.sh
 source venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
+### EC2でのcron設定とログ確認
+
+#### cronジョブの確認
+```bash
+# 現在のcronジョブを確認
+crontab -l
+
+# cronサービスの状態確認
+sudo systemctl status cron
+
+# cronサービスの開始
+sudo systemctl start cron
+
+# cronサービスの有効化（自動起動）
+sudo systemctl enable cron
+```
+
+#### cronログの確認
+```bash
+# cronのシステムログを確認
+sudo tail -f /var/log/syslog | grep CRON
+
+# cronの実行履歴を確認
+sudo grep CRON /var/log/syslog
+
+# 特定の日付のcronログ
+sudo grep "Jan 27" /var/log/syslog | grep CRON
+
+# cronジョブの詳細なログ（Ubuntu/Debian）
+sudo tail -f /var/log/cron.log
+
+# Amazon Linux 2の場合
+sudo tail -f /var/log/cron
+```
+
+#### cronジョブの設定例
+```bash
+# crontab編集
+crontab -e
+
+# 例：毎時0分に実行
+0 * * * * /path/to/your/script.sh >> /var/log/your-job.log 2>&1
+
+# 例：毎日午前3時に実行
+0 3 * * * cd /Users/yusukekohno/Documents/AIJOB_lc && source venv/bin/activate && python job_matching_flow.py index_yoin >> /var/log/job-matching.log 2>&1
+```
+
+#### ログファイルの確認
+```bash
+# 独自のログファイルを確認
+tail -f /var/log/job-matching.log
+
+# エラーログの確認
+tail -f /var/log/job-matching-error.log
+
+# ログファイルの権限確認
+ls -la /var/log/job-matching*.log
+
+# ログディレクトリの権限確認
+ls -ld /var/log/
+```
+
+#### トラブルシューティング
+```bash
+# cronデーモンの再起動
+sudo systemctl restart cron
+
+# 環境変数の確認（cronで実行される環境）
+# crontabに以下を追加してテスト
+* * * * * env > /tmp/cron-env.txt
+
+# パス確認
+which python3
+which pip3
+
+# cronジョブのテスト実行
+# crontabに一時的に追加
+* * * * * echo "Test cron job: $(date)" >> /tmp/cron-test.log
+```
+
+#### シェルスクリプトのエラー対処
+
+**エラー例**: `source: not found` / `python: not found`
+
+```bash
+# 問題: シェルスクリプトでbashではなくshを使用している
+# 解決方法1: シェルスクリプトの1行目を修正
+#!/bin/bash  # ← これを確認
+
+# 解決方法2: 実行時にbashを明示指定
+bash /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# 解決方法3: python3を明示指定
+# スクリプト内で python → python3 に変更
+```
+
+**修正版スクリプト例**:
+```bash
+#!/bin/bash
+# EC2用のジョブマッチングスクリプト
+
+# ログ設定
+LOG_FILE="/var/log/job-matching.log"
+ERROR_LOG="/var/log/job-matching-error.log"
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+# 作業ディレクトリに移動
+cd /opt/job-matching-api || exit 1
+
+# Python仮想環境の有効化
+source venv/bin/activate || {
+    echo "$DATE: Failed to activate venv" >> "$ERROR_LOG"
+    exit 1
+}
+
+# 環境変数の設定
+export OPENAI_API_KEY="your-key-here"
+export PINECONE_API_KEY="your-key-here"
+export PINECONE_INDEX_HOST="your-host-here"
+
+# Python実行（python3を明示）
+python3 job_matching_flow.py format_anken limit=100 >> "$LOG_FILE" 2>> "$ERROR_LOG"
+
+# 実行結果のログ出力
+if [ $? -eq 0 ]; then
+    echo "$DATE: format_anken completed successfully" >> "$LOG_FILE"
+else
+    echo "$DATE: format_anken failed" >> "$ERROR_LOG"
+fi
+```
+
+**権限設定**:
+```bash
+# スクリプトに実行権限を付与
+chmod +x /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# ログディレクトリの権限確認
+sudo chown $USER:$USER /var/log/job-matching*.log
+```
+
+**crontab設定例**:
+```bash
+# crontab -e で編集
+# 毎日午前3時に実行（bashを明示指定）
+0 3 * * * /bin/bash /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# または、フルパス指定
+0 3 * * * cd /opt/job-matching-api && /bin/bash scripts/daily_format_anken.sh
+```
+
+#### スクリプトが反応しない場合のデバッグ
+
+**問題**: `bash script.sh` で実行してもエラーも出ず、反応がない
+
+```bash
+# デバッグ方法1: 詳細実行モード
+bash -x /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# デバッグ方法2: スクリプト内容確認
+cat /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# デバッグ方法3: 権限確認
+ls -la /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# デバッグ方法4: 手動で各コマンド実行
+cd /opt/job-matching-api
+pwd
+ls -la
+source venv/bin/activate
+which python3
+python3 --version
+python3 job_matching_flow.py --help
+```
+
+**スクリプト改良版（デバッグ情報付き）**:
+```bash
+#!/bin/bash
+set -e  # エラー時に停止
+set -x  # 実行コマンドを表示
+
+# ログ設定
+LOG_FILE="/var/log/job-matching.log"
+ERROR_LOG="/var/log/job-matching-error.log"
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+echo "$DATE: Script started" | tee -a "$LOG_FILE"
+
+# 作業ディレクトリに移動
+echo "$DATE: Changing to /opt/job-matching-api" | tee -a "$LOG_FILE"
+cd /opt/job-matching-api || {
+    echo "$DATE: Failed to change directory" | tee -a "$ERROR_LOG"
+    exit 1
+}
+
+echo "$DATE: Current directory: $(pwd)" | tee -a "$LOG_FILE"
+
+# Python仮想環境の有効化
+echo "$DATE: Activating virtual environment" | tee -a "$LOG_FILE"
+source venv/bin/activate || {
+    echo "$DATE: Failed to activate venv" | tee -a "$ERROR_LOG"
+    exit 1
+}
+
+echo "$DATE: Python version: $(python3 --version)" | tee -a "$LOG_FILE"
+
+# 環境変数の設定（実際の値に置き換えてください）
+export OPENAI_API_KEY="your-openai-key"
+export PINECONE_API_KEY="your-pinecone-key"
+export PINECONE_INDEX_HOST="your-pinecone-host"
+
+# Python実行
+echo "$DATE: Starting format_anken" | tee -a "$LOG_FILE"
+python3 job_matching_flow.py format_anken limit=100 2>&1 | tee -a "$LOG_FILE"
+
+# 実行結果の確認
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo "$DATE: format_anken completed successfully" | tee -a "$LOG_FILE"
+else
+    echo "$DATE: format_anken failed with exit code ${PIPESTATUS[0]}" | tee -a "$ERROR_LOG"
+    exit 1
+fi
+
+echo "$DATE: Script completed" | tee -a "$LOG_FILE"
+```
+
+**即座に確認できる項目**:
+```bash
+# 1. ファイルが存在するか
+ls -la /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# 2. 実行権限があるか
+file /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# 3. スクリプトの中身
+head -10 /opt/job-matching-api/scripts/daily_format_anken.sh
+
+# 4. ディレクトリ構造確認
+ls -la /opt/job-matching-api/
+
+# 5. Python環境確認
+cd /opt/job-matching-api && ls -la venv/
+
+# 6. 手動実行テスト（最小限）
+cd /opt/job-matching-api && source venv/bin/activate && python3 --version
+```
+
 ### APIの利点
 
 - **外部連携**: GASや他のシステムから簡単に呼び出し可能
