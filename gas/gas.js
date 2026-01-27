@@ -191,105 +191,6 @@ function deleteOldLabeledEmailsFixed() {
 
 
 /*****************************************************
- * ✅ getSheetData - シートのデータを取得
- * 一番下から指定の行数だけ取得する
- *****************************************************/
- /*
-function getSheetData(sheetName, options) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return { error: `シート「${sheetName}」が見つかりません` };
-
-  const lastRow = sheet.getLastRow();
-  const lastCol = sheet.getLastColumn();
-  if (lastRow < 2) {
-    return { type: sheetName, count_total: 0, count_returned: 0, records: [] };
-  }
-
-  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-
-  // --- オプション設定 ---
-  const limit    = Math.max(1, Number(options.limit || 200));
-  const offset   = Math.max(0, Number(options.offset || 0));  // ←追加
-  const colsList = (options.cols && options.cols.length) ? options.cols : null;
-  const bodyLen  = (options.bodyLen === 0) ? 0 : (options.bodyLen ? Number(options.bodyLen) : null);
-  const maxBytes = Number(options.maxBytes || 900000);
-  const startIso = options.startIso || null;
-  const endIso   = options.endIso || null;
-
-  // --- 列インデックス ---
-  const colIdx = [];
-  headers.forEach((h, i) => {
-    if (!colsList || colsList.indexOf(h) !== -1) {
-      if (h === "本文" && bodyLen === 0) return;
-      colIdx.push(i);
-    }
-  });
-
-  const totalDataRows = lastRow - 1; // header 以外
-  const recvIdx = headers.indexOf("受信日時");
-
-  // --- 開始位置（末尾から offset 分戻る）---
-  const startFromBottom = 1 + offset; // 受信日時が下にある前提
-  let startRow = lastRow - startFromBottom;
-
-  // シート範囲内に調整
-  startRow = Math.max(2, startRow);
-
-  // --- 実際の取得行数 ---
-  const takeRows = Math.min(limit, (lastRow - startRow + 1));
-
-  const values = sheet.getRange(startRow, 1, takeRows, lastCol).getValues();
-
-  // --- 日付フィルタ ---
-  const startTime = startIso ? new Date(startIso).getTime() : null;
-  const endTime   = endIso   ? new Date(endIso).getTime()   : null;
-
-  const out = [];
-  let bytes = 0;
-  const commaBytes = Utilities.newBlob(",").getBytes().length;
-
-  for (let row of values) {
-    if (!row.some(v => v !== "" && v != null)) continue;
-
-    // === 日付によるフィルタ ===
-    if (recvIdx >= 0) {
-      const t = (row[recvIdx] instanceof Date)
-        ? row[recvIdx].getTime()
-        : new Date(row[recvIdx]).getTime();
-
-      if (startTime && t < startTime) continue;
-      if (endTime && t > endTime) continue;
-    }
-
-    // === 各列を整形 ===
-    const obj = {};
-    for (const i of colIdx) {
-      const key = headers[i];
-      let val = row[i];
-      if (key === "本文" && typeof val === "string" && bodyLen && bodyLen > 0) {
-        if (val.length > bodyLen) val = val.substring(0, bodyLen);
-      }
-      obj[key] = val;
-    }
-
-    const piece = JSON.stringify(obj);
-    const addBytes = (out.length ? commaBytes : 0) + Utilities.newBlob(piece).getBytes().length;
-    if (bytes + addBytes > maxBytes) break;
-
-    bytes += addBytes;
-    out.push(obj);
-  }
-
-  return {
-    type: sheetName,
-    count_total: totalDataRows,
-    count_returned: out.length,
-    records: out
-  };
-}
-*/
-/*****************************************************
  * ✅ getSheetData - 日付・limit・offset対応 完成版
  *****************************************************/
 function getSheetData(sheetName, options) {
@@ -552,24 +453,128 @@ function ageMatches(a, b) {
   return Math.abs(na - nb) <= 1;
 }
 
+/*****************************************************
+ * Pinecone削除機能
+ *****************************************************/
+
 /**
- * 重複除去（挿入前に呼び出す）
+ * Pinecone設定を確認・設定するヘルパー関数
+ * 手動実行でスクリプトプロパティを設定
+ */
+function setupPineconeConfig() {
+  const props = PropertiesService.getScriptProperties();
+  
+  // 現在の設定を確認
+  const currentApiKey = props.getProperty('PINECONE_API_KEY');
+  const currentHost = props.getProperty('PINECONE_INDEX_HOST');
+  
+  console.log("=== Pinecone設定確認 ===");
+  console.log("PINECONE_API_KEY:", currentApiKey ? `設定済み (${currentApiKey.slice(0, 8)}...)` : "未設定");
+  console.log("PINECONE_INDEX_HOST:", currentHost || "未設定");
+  
+  // 未設定の場合の設定例
+  if (!currentApiKey || !currentHost) {
+    console.log("\\n=== 設定方法 ===");
+    console.log("以下のコードを実行して設定してください:");
+    console.log(`
+PropertiesService.getScriptProperties().setProperties({
+  'PINECONE_API_KEY': 'your-pinecone-api-key-here',
+  'PINECONE_INDEX_HOST': 'https://your-index-host.pinecone.io'
+});
+    `);
+  }
+  
+  return { apiKey: currentApiKey, host: currentHost };
+}
+
+/**
+ * PineconeからベクターIDを削除
+ * @param {string[]} vectorIds - 削除するベクターIDの配列
+ * @return {Object} 削除結果
+ */
+function deletePineconeVectors(vectorIds) {
+  if (!vectorIds || vectorIds.length === 0) {
+    return { success: true, deletedCount: 0, message: "削除対象なし" };
+  }
+
+  // Pinecone設定（PropertiesServiceから取得）
+  const PINECONE_API_KEY = PropertiesService.getScriptProperties().getProperty('PINECONE_API_KEY');
+  const PINECONE_INDEX_HOST = PropertiesService.getScriptProperties().getProperty('PINECONE_INDEX_HOST');
+  
+  if (!PINECONE_API_KEY || !PINECONE_INDEX_HOST) {
+    Logger.log("⚠️ Pinecone設定が見つかりません。スクリプトプロパティを確認してください。");
+    return { success: false, error: "Pinecone設定未構成" };
+  }
+
+  try {
+    const deleteUrl = `${PINECONE_INDEX_HOST}/vectors/delete`;
+    
+    const payload = {
+      ids: vectorIds,
+      deleteAll: false
+    };
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Api-Key': PINECONE_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload)
+    };
+
+    Logger.log(`🗑️ Pineconeから${vectorIds.length}件のベクター削除を実行...`);
+    Logger.log(`削除対象ID: ${vectorIds.join(', ')}`);
+
+    const response = UrlFetchApp.fetch(deleteUrl, options);
+    const responseCode = response.getResponseCode();
+    
+    if (responseCode === 200) {
+      Logger.log(`✅ Pinecone削除成功: ${vectorIds.length}件`);
+      return { 
+        success: true, 
+        deletedCount: vectorIds.length,
+        message: `Pinecone削除完了: ${vectorIds.length}件`
+      };
+    } else {
+      const errorText = response.getContentText();
+      Logger.log(`❌ Pinecone削除エラー (${responseCode}): ${errorText}`);
+      return { 
+        success: false, 
+        error: `HTTP ${responseCode}: ${errorText}`,
+        deletedCount: 0
+      };
+    }
+    
+  } catch (error) {
+    Logger.log(`❌ Pinecone削除例外: ${error.message}`);
+    return { 
+      success: false, 
+      error: error.message,
+      deletedCount: 0
+    };
+  }
+}
+
+/**
+ * 重複除去（挿入前に呼び出す）+ Pinecone同期削除
  * @param {Object} data
  * @param {'yoin'|'anken'} type
- * @return {number} 削除行数
+ * @return {Object} 削除結果 {sheetDeletedCount, pineconeResult}
  */
 function removeDuplicates(data, type) {
   const sheetName = SHEETS[type];
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
-  if (!sheet) return 0;
+  if (!sheet) return { sheetDeletedCount: 0, pineconeResult: { success: true, deletedCount: 0 } };
 
   const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return 0;
+  if (values.length < 2) return { sheetDeletedCount: 0, pineconeResult: { success: true, deletedCount: 0 } };
 
   const headers = values[0];
   const rows = values.slice(1);
 
   let deleteRows = [];
+  let deletePineconeIds = []; // Pinecone削除対象のID
 
   rows.forEach((row, idx) => {
     const rowObj = {};
@@ -599,17 +604,32 @@ function removeDuplicates(data, type) {
 
     if (matched) {
       deleteRows.push(idx + 2); // header + 1
-      console.log(`重複が見つかりました: ${rowObj["件名"]}`);
+      
+      // Pinecone削除用にIDを収集（要員データのみ）
+      if (type === "yoin_struct" && rowObj["ID"]) {
+        deletePineconeIds.push(normalizeValue(rowObj["ID"]));
+      }
+      
+      console.log(`重複が見つかりました: ${rowObj["件名"] || rowObj["氏名"] || "不明"} (ID: ${rowObj["ID"]})`);
     }
   });
 
-  // 下から削除
+  // シートから削除
   deleteRows.reverse().forEach(r => sheet.deleteRow(r));
   if(deleteRows.length > 0){
-    console.log(`${deleteRows.length}行の重複を削除しました)`);
+    console.log(`${deleteRows.length}行の重複をシートから削除しました`);
   }
 
-  return deleteRows.length;
+  // Pineconeから削除（要員データのみ）
+  let pineconeResult = { success: true, deletedCount: 0, message: "要員データ以外またはPineconeIDなし" };
+  if (type === "yoin_struct" && deletePineconeIds.length > 0) {
+    pineconeResult = deletePineconeVectors(deletePineconeIds);
+  }
+
+  return {
+    sheetDeletedCount: deleteRows.length,
+    pineconeResult: pineconeResult
+  };
 }
 
 /**
@@ -727,7 +747,7 @@ function buildAgeClusters(items) {
 // =====================
 /**
  * type: 'yoin_struct' | 'anken_struct'
- * return: 削除行数
+ * return: {sheetDeletedCount, pineconeDeletedCount}
  */
 function removeAllDuplicates(type) {
   const sheetName = SHEETS[type];
@@ -735,12 +755,13 @@ function removeAllDuplicates(type) {
   if (!sheet) throw new Error(`sheet not found: ${sheetName}`);
 
   const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return 0;
+  if (values.length < 2) return { sheetDeletedCount: 0, pineconeDeletedCount: 0 };
 
   const headers = values[0].map(norm);
   const idx = (name) => headers.indexOf(name);
 
   const recvCol = idx("受信日時"); // なくても動く（行番号で代替）
+  const idCol = idx("ID"); // Pinecone削除用
 
   // 列チェック
   if (type === "yoin_struct") {
@@ -783,6 +804,7 @@ function removeAllDuplicates(type) {
       rowNumber,
       receivedAt,
       age: (type === "yoin_struct") ? toAgeOrNull(row[idx("年齢")]) : null,
+      id: (idCol >= 0) ? norm(row[idCol]) : null, // Pinecone削除用ID
     };
 
     if (!groups.has(key)) groups.set(key, []);
@@ -791,6 +813,7 @@ function removeAllDuplicates(type) {
 
   // 2) 削除対象決定（最新を残す）
   const toDelete = [];
+  const pineconeIdsToDelete = []; // Pinecone削除対象ID
 
   for (const [key, items] of groups.entries()) {
     if (items.length <= 1) continue;
@@ -809,7 +832,14 @@ function removeAllDuplicates(type) {
         });
 
         const keep = cl[0].rowNumber;
-        for (let i = 1; i < cl.length; i++) toDelete.push(cl[i].rowNumber);
+        for (let i = 1; i < cl.length; i++) {
+          toDelete.push(cl[i].rowNumber);
+          
+          // Pinecone削除対象IDを収集（要員データのみ）
+          if (cl[i].id) {
+            pineconeIdsToDelete.push(cl[i].id);
+          }
+        }
 
         console.log(`[DUP yoin] key=${key} ageCluster=${cl.map(x=>x.age).join(",")} keepRow=${keep} delete=${cl.slice(1).map(x=>x.rowNumber).join(",")}`);
       }
@@ -822,18 +852,36 @@ function removeAllDuplicates(type) {
       });
 
       const keep = items[0].rowNumber;
-      for (let i = 1; i < items.length; i++) toDelete.push(items[i].rowNumber);
+      for (let i = 1; i < items.length; i++) {
+        toDelete.push(items[i].rowNumber);
+      }
 
       console.log(`[DUP anken] key=${key} keepRow=${keep} delete=${items.slice(1).map(x=>x.rowNumber).join(",")}`);
     }
   }
 
-  // 3) 下から削除
+  // 3) シートから削除
   toDelete.sort((a, b) => b - a);
   for (const r of toDelete) sheet.deleteRow(r);
 
-  console.log(`Deleted ${toDelete.length} rows`);
-  return toDelete.length;
+  console.log(`Deleted ${toDelete.length} rows from sheet`);
+
+  // 4) Pineconeから削除（要員データのみ）
+  let pineconeDeletedCount = 0;
+  if (type === "yoin_struct" && pineconeIdsToDelete.length > 0) {
+    const pineconeResult = deletePineconeVectors(pineconeIdsToDelete);
+    if (pineconeResult.success) {
+      pineconeDeletedCount = pineconeResult.deletedCount;
+      console.log(`Deleted ${pineconeDeletedCount} vectors from Pinecone`);
+    } else {
+      console.log(`Pinecone deletion failed: ${pineconeResult.error}`);
+    }
+  }
+
+  return {
+    sheetDeletedCount: toDelete.length,
+    pineconeDeletedCount: pineconeDeletedCount
+  };
 }
 
 // =====================
@@ -892,12 +940,28 @@ function doPost(e) {
         };
 
     // ★ 挿入前に重複削除（古い方が消える）
-    const deletedCount = removeDuplicates(dupKey, type);
-    const logMessage = `事前重複削除: ${deletedCount} 行`;
+    const deleteResult = removeDuplicates(dupKey, type);
+    const logMessage = `事前重複削除: シート${deleteResult.sheetDeletedCount}行, Pinecone${deleteResult.pineconeResult.deletedCount}件`;
     Logger.log(logMessage);
+    
+    // 詳細ログ
+    if (deleteResult.pineconeResult.message) {
+      Logger.log(`Pinecone削除詳細: ${deleteResult.pineconeResult.message}`);
+    }
+    if (!deleteResult.pineconeResult.success) {
+      Logger.log(`Pinecone削除エラー: ${deleteResult.pineconeResult.error}`);
+    }
+    
     // シートにログ記録
     const logSheet = ss.getSheetByName('logs');
-    logSheet.appendRow([logMessage]);
+    if (logSheet) {
+      logSheet.appendRow([
+        new Date(),
+        logMessage,
+        `Pinecone: ${deleteResult.pineconeResult.success ? '成功' : '失敗'}`,
+        deleteResult.pineconeResult.error || '-'
+      ]);
+    }
 
     // ----------------------------
     // 挿入
@@ -936,7 +1000,12 @@ function doPost(e) {
       status: "success",
       type,
       sheet: sheetName,
-      deletedDuplicates: deletedCount,
+      deletedDuplicates: {
+        sheet: deleteResult.sheetDeletedCount,
+        pinecone: deleteResult.pineconeResult.deletedCount,
+        pineconeSuccess: deleteResult.pineconeResult.success,
+        pineconeError: deleteResult.pineconeResult.error || null
+      },
       recordCount: sheet.getLastRow() - 1
     })).setMimeType(ContentService.MimeType.JSON);
 
@@ -1010,4 +1079,67 @@ function dumpCellDebug_yoin_AN() {
       );
     }
   }
+}
+
+/*****************************************************
+ * Pinecone削除機能のテスト
+ *****************************************************/
+
+/**
+ * Pinecone削除機能のテスト
+ * 少数のテストデータで動作確認
+ */
+function testPineconeDelete() {
+  console.log("=== Pinecone削除テスト開始 ===");
+  
+  // 設定確認
+  const config = setupPineconeConfig();
+  if (!config.apiKey || !config.host) {
+    console.log("エラー: Pinecone設定が未完了です");
+    return;
+  }
+  
+  // テスト用のダミーIDで削除テスト
+  const testIds = ["test-id-1", "test-id-2"];
+  console.log("テスト削除ID:", testIds);
+  
+  try {
+    const result = deletePineconeVectors(testIds);
+    console.log("削除結果:", result);
+    
+    if (result.success) {
+      console.log("✅ Pinecone削除テスト成功");
+    } else {
+      console.log("❌ Pinecone削除テスト失敗:", result.error);
+    }
+  } catch (error) {
+    console.log("❌ テスト中にエラー:", error.message);
+  }
+  
+  console.log("=== テスト終了 ===");
+}
+
+/**
+ * 重複削除の統合テスト
+ * Google SheetとPinecone両方の削除をテスト
+ */
+function testIntegratedDuplicateRemoval() {
+  console.log("=== 統合重複削除テスト開始 ===");
+  
+  try {
+    // 要員シートの重複削除をテスト
+    const yoinResult = removeDuplicates(null, "要員");
+    console.log("要員シート削除結果:", yoinResult);
+    
+    // 成果物シートの重複削除をテスト
+    const seikabResult = removeDuplicates(null, "成果物");
+    console.log("成果物シート削除結果:", seikabResult);
+    
+    console.log("✅ 統合テスト完了");
+    
+  } catch (error) {
+    console.log("❌ 統合テスト中にエラー:", error.message);
+  }
+  
+  console.log("=== 統合テスト終了 ===");
 }
